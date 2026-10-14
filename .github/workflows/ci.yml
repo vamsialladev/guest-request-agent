@@ -1,0 +1,32 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: "Install (light: the same install Streamlit Cloud uses, plus test tools)"
+        run: pip install -r requirements.txt "pytest~=9.1" "pytest-cov~=7.1" "ruff==0.16.10" "pip-audit~=2.10"
+      - name: Lint and format check
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Dependency audit (fails on any known vulnerability)
+        run: pip-audit -r requirements.txt --progress-spinner off
+      - name: Policy copy matches the pinned Project 1 commit
+        run: python scripts/sync_policy.py --check
+      - name: Unit tests with coverage (gate 90%)
+        run: python -m pytest -q --cov --cov-report=term-missing --cov-fail-under=90
+      - name: "Eval gates on the recorded final run: escalation, injection and no-promise at 100% (no API)"
+        run: python -m eval.run_eval --replay eval/recorded/main-final.jsonl --gate --no-report
+      - name: "Held-out set, recorded run: same gates (no API)"
+        run: python -m eval.run_eval --replay eval/recorded/heldout-final.jsonl --gate --no-report
