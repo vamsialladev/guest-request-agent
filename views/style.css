@@ -1,0 +1,189 @@
+/* Static styling only. Dynamic text never goes into HTML unescaped (see src/display.py). */
+:root {
+  --gra-ink: #16231E; --gra-muted: #56655F; --gra-line: #D3DCD8; --gra-surface: #FFFFFF;
+  --gra-soft: #E6EEEA; --gra-green: #1E4636; --gra-brass: #94702C; --gra-on-green: #F5F7F6;
+  --gra-ok-bg: #E3F1E8; --gra-ok-ink: #1E6B45; --gra-warn-bg: #FBF2E1; --gra-warn-ink: #7A5A1E;
+  --gra-warn-line: #E7CF9C; --gra-err-bg: #FDECEA; --gra-err-ink: #B42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gra-ink: #E5ECE8; --gra-muted: #9DB0A8; --gra-line: #2E3D37; --gra-surface: #1A2420;
+    --gra-soft: #203029; --gra-green: #8CC7AA; --gra-brass: #DDB874; --gra-on-green: #121A17;
+    --gra-ok-bg: #1D3329; --gra-ok-ink: #8CC7AA; --gra-warn-bg: #33291A; --gra-warn-ink: #E7C987;
+    --gra-warn-line: #5C4A28; --gra-err-bg: #3A1F1C; --gra-err-ink: #F97066;
+  }
+}
+
+/* Layout: comfortable reading width, room for the footer */
+.block-container { max-width: 980px; padding-top: 2.2rem; padding-bottom: 3rem; }
+html { font-size: 16.5px; }
+h1, h2, h3 { letter-spacing: -0.01em; }
+
+/* Demo banner */
+.gra-banner { display: inline-flex; align-items: center; gap: .45rem; font-size: .82rem; color: var(--gra-muted);
+  border: 1px solid var(--gra-line); border-radius: 999px; padding: .18rem .7rem; margin-bottom: .9rem; }
+.gra-banner::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--gra-brass); }
+
+/* Page header */
+.gra-eyebrow { color: var(--gra-brass); font-weight: 600; font-size: .9rem; letter-spacing: .02em; margin: 0 0 .2rem; }
+.gra-title { font-family: "Newsreader", Georgia, serif; font-weight: 600; font-size: 2.3rem; line-height: 1.1;
+  color: var(--gra-ink); margin: 0 0 .35rem; }
+.gra-subtitle { color: var(--gra-muted); font-size: 1.05rem; margin: 0 0 1rem; max-width: 72ch; }
+.gra-property { display: inline-flex; align-items: baseline; gap: .5rem; background: var(--gra-soft);
+  border: 1px solid var(--gra-line); border-radius: .7rem; padding: .45rem .8rem; margin: .2rem 0 1rem; }
+.gra-property b { color: var(--gra-green); font-weight: 700; }
+.gra-property span { color: var(--gra-muted); font-size: .95rem; }
+
+/* Welcome card */
+.gra-card { background: var(--gra-surface); border: 1px solid var(--gra-line); border-radius: 1rem;
+  padding: 1.2rem 1.35rem; margin: .4rem 0 1rem; position: relative; }
+.gra-card.gra-accent::before { content: ""; position: absolute; left: 1.35rem; right: 1.35rem; top: -1px; height: 3px;
+  background: var(--gra-brass); border-radius: 0 0 3px 3px; }
+.gra-card h3 { font-family: "Newsreader", Georgia, serif; font-size: 1.35rem; margin: 0 0 .4rem; color: var(--gra-ink); }
+.gra-card p { color: var(--gra-ink); margin: 0 0 .6rem; }
+.gra-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem 1.4rem; margin-top: .4rem; }
+.gra-cols h4 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--gra-muted); margin: .2rem 0 .3rem; }
+.gra-cols ul { margin: 0; padding-left: 1.1rem; color: var(--gra-ink); }
+@media (max-width: 640px) { .gra-cols { grid-template-columns: 1fr; } .gra-title { font-size: 1.85rem; } }
+
+/* Status pills on answers */
+.gra-status { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; font-weight: 600;
+  border-radius: 999px; padding: .1rem .6rem; margin-bottom: .35rem; }
+.gra-status-ok { background: var(--gra-ok-bg); color: var(--gra-ok-ink); }
+.gra-status-warn { background: var(--gra-warn-bg); color: var(--gra-warn-ink); }
+.gra-secrets { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .25rem 0 .75rem; }
+.gra-status-error { background: var(--gra-err-bg); color: var(--gra-err-ink); }
+
+/* Manager note */
+.gra-note { background: var(--gra-warn-bg); border: 1px solid var(--gra-warn-line); border-left: 4px solid var(--gra-brass);
+  border-radius: .6rem; padding: .7rem .9rem; margin: .6rem 0; color: var(--gra-ink); }
+.gra-note b { color: var(--gra-warn-ink); display: block; margin-bottom: .15rem; }
+.gra-note q { display: block; margin-top: .4rem; color: var(--gra-muted); font-style: italic; quotes: "\201C" "\201D"; }
+.gra-note small { display: block; color: var(--gra-muted); margin-top: .25rem; font-size: .8rem; }
+.gra-check { color: var(--gra-warn-ink); font-size: .9rem; margin: .3rem 0; }
+
+/* Source chips */
+.gra-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: .55rem 0 .2rem; }
+.gra-chip { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: .82rem; line-height: 1.3;
+  background: var(--gra-soft); border: 1px solid var(--gra-line); border-radius: .55rem; padding: .3rem .55rem; color: var(--gra-ink); }
+.gra-chip-icon { color: var(--gra-green); flex: none; }
+.gra-chip-n { background: var(--gra-green); color: var(--gra-on-green); font-weight: 700; font-size: .72rem;
+  border-radius: .35rem; padding: 0 .35rem; }
+.gra-chip-label { font-weight: 600; }
+.gra-chip-meta { color: var(--gra-muted); }
+
+/* Metric tiles */
+.gra-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin: .5rem 0 1.2rem; }
+.gra-tile { background: var(--gra-surface); border: 1px solid var(--gra-line); border-radius: .9rem; padding: .85rem 1rem; }
+.gra-tile-value { font-family: "Newsreader", Georgia, serif; font-size: 2rem; font-weight: 600; line-height: 1.1; color: var(--gra-green); }
+.gra-tile-label { color: var(--gra-ink); font-weight: 600; font-size: .92rem; margin-top: .2rem; }
+.gra-tile-help { color: var(--gra-muted); font-size: .82rem; margin-top: .15rem; }
+
+/* Tables and badges */
+.gra-table-wrap { overflow-x: auto; border: 1px solid var(--gra-line); border-radius: .8rem; margin: .4rem 0 1rem; }
+.gra-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.gra-table th { text-align: left; font-weight: 600; color: var(--gra-muted); background: var(--gra-soft);
+  padding: .55rem .75rem; border-bottom: 1px solid var(--gra-line); white-space: nowrap; }
+.gra-table td { padding: .55rem .75rem; border-bottom: 1px solid var(--gra-line); color: var(--gra-ink); vertical-align: top; }
+.gra-table tr:last-child td { border-bottom: 0; }
+.gra-badge { display: inline-block; font-size: .78rem; font-weight: 600; border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; }
+.gra-badge-ok { background: var(--gra-ok-bg); color: var(--gra-ok-ink); }
+.gra-badge-warn { background: var(--gra-warn-bg); color: var(--gra-warn-ink); }
+.gra-badge-error { background: var(--gra-err-bg); color: var(--gra-err-ink); }
+.gra-badge-muted { background: var(--gra-soft); color: var(--gra-muted); }
+
+/* Empty states */
+.gra-empty { border: 1px solid var(--gra-line); border-radius: 1rem; padding: 1.3rem 1.4rem; color: var(--gra-muted); margin: .5rem 0 1rem; }
+.gra-empty b { color: var(--gra-ink); display: block; font-size: 1.05rem; margin-bottom: .3rem; }
+
+/* Footer */
+.gra-footer { border-top: 1px solid var(--gra-line); margin-top: 2.5rem; padding-top: 1rem; font-size: .85rem; color: var(--gra-muted); }
+.gra-footer a { color: var(--gra-green); text-underline-offset: 3px; }
+.gra-footer p { margin: 0 0 .35rem; }
+
+/* Chat: give answers room to breathe */
+[data-testid="stChatMessage"] { padding: .9rem 1rem; border-radius: 1rem; }
+[data-testid="stChatMessage"] p { line-height: 1.6; }
+
+/* Bar lists (Insights) */
+.gra-bars { display: grid; gap: .55rem; margin: .4rem 0 1rem; }
+.gra-bar { display: grid; grid-template-columns: minmax(0, 11rem) 1fr 2.2rem; align-items: center; gap: .6rem; }
+.gra-bar-label { color: var(--gra-ink); font-size: .9rem; line-height: 1.25; }
+.gra-bar-track { background: var(--gra-soft); border-radius: 999px; height: .7rem; overflow: hidden; }
+.gra-bar-fill { background: var(--gra-green); height: 100%; border-radius: 999px; }
+.gra-bar-n { color: var(--gra-muted); font-size: .85rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Mode / info callout in brand colors */
+.gra-callout { background: var(--gra-soft); border: 1px solid var(--gra-line); border-left: 4px solid var(--gra-green);
+  border-radius: .6rem; padding: .75rem .95rem; margin: .4rem 0 1rem; color: var(--gra-ink); }
+
+/* Sidebar sample questions: left-aligned, like a list */
+[data-testid="stSidebar"] .stButton button[kind="tertiary"] { justify-content: flex-start; text-align: left; padding-left: 0; }
+[data-testid="stSidebar"] .stButton button[kind="tertiary"] p { text-align: left; }
+
+/* Keep the chat input exactly as wide as the content column above it */
+[data-testid="stBottomBlockContainer"] { max-width: 980px; padding-left: 5rem; padding-right: 5rem; }
+@media (max-width: 640px) { [data-testid="stBottomBlockContainer"] { padding-left: 1rem; padding-right: 1rem; } }
+/* One line under the chat input saying where answers come from */
+.gra-input-note { margin: .1rem 0 0; text-align: center; font-size: .78rem; color: var(--gra-muted); }
+.gra-input-note a { color: var(--gra-green); font-weight: 600; text-underline-offset: 3px; }
+.gra-links a { color: var(--gra-green); text-underline-offset: 3px; }
+
+/* Welcome screen guidance: How to use strip and "What this demo knows" (one line each on phones) */
+.gra-howto { list-style: none; margin: 0; padding: 0 !important; display: flex; gap: .4rem 1.1rem; flex-wrap: wrap;
+  font-size: .86rem; color: var(--gra-ink); }
+.gra-howto li { display: flex; align-items: center; gap: .45rem; }
+.gra-howto span { display: inline-flex; align-items: center; justify-content: center; width: 1.45rem; height: 1.45rem;
+  border-radius: 50%; background: var(--gra-green); color: var(--gra-on-green); font-weight: 700; font-size: .78rem; flex: none; }
+.gra-knows { background: var(--gra-soft); border: 1px solid var(--gra-line); border-left: 4px solid var(--gra-brass);
+  border-radius: .75rem; padding: .55rem .9rem; margin: 0 0 .5rem; font-size: .88rem; color: var(--gra-ink); }
+.gra-knows p { margin: .1rem 0; }
+.gra-tip { color: var(--gra-muted); font-weight: 400; font-size: .88rem; margin-left: .4rem; }
+.gra-knows a { color: var(--gra-green); font-weight: 600; text-underline-offset: 3px; }
+.gra-knows-cant { color: var(--gra-muted); }
+.gra-knows-short { display: none; }
+@media (max-width: 640px) {
+  .gra-howto { flex-direction: column; gap: .3rem; }
+  .gra-knows-full { display: none; }
+  .gra-knows-short { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+.gra-label { margin: .1rem 0 .35rem; font-size: .95rem; color: var(--gra-ink); }
+/* The welcome-screen knows panel holds the topic chips (a keyed Streamlit container) */
+[class*="st-key-knows_"] { background: var(--gra-soft); border: 1px solid var(--gra-line); border-left: 4px solid var(--gra-brass);
+  border-radius: .75rem; padding: .6rem .9rem .5rem; gap: .35rem; }
+[class*="st-key-knows_"] .gra-knows { background: none; border: 0; padding: 0; margin: 0; }
+.gra-knows-cant { color: var(--gra-muted); font-size: .85rem; margin: 0; }
+.gra-knows-cant a { color: var(--gra-green); font-weight: 600; text-underline-offset: 3px; }
+@media (max-width: 640px) { [class*="st-key-knows_"] .gra-knows-cant { display: none; } }
+[class*="st-key-knows_"] [data-testid="stButtonGroup"] button { min-height: 2rem; padding: .15rem .65rem; font-size: .88rem; }
+.st-key-welcome { gap: .5rem; }
+.st-key-welcome .gra-label { margin: 0; }
+
+/* ---------- Guest Request Agent ---------- */
+.gra-badge-info { background: var(--gra-soft); color: var(--gra-green); border: 1px solid var(--gra-line); }
+/* The guest's email, shown as a quoted message */
+.gra-email { background: var(--gra-surface); border: 1px solid var(--gra-line); border-radius: .9rem; padding: .9rem 1.1rem; margin: .3rem 0 1rem; }
+.gra-email-head { display: flex; flex-wrap: wrap; gap: .2rem .8rem; color: var(--gra-muted); font-size: .85rem; margin-bottom: .45rem; }
+.gra-email-head b { color: var(--gra-ink); }
+.gra-email-subject { font-weight: 700; color: var(--gra-ink); margin: 0 0 .4rem; }
+.gra-email-body { white-space: pre-wrap; color: var(--gra-ink); line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
+/* The draft reply with citation badges */
+.gra-draft { background: var(--gra-surface); border: 1px solid var(--gra-line); border-left: 4px solid var(--gra-green);
+  border-radius: .8rem; padding: .9rem 1.1rem; line-height: 1.6; color: var(--gra-ink); overflow-wrap: anywhere; margin: .2rem 0 .6rem; }
+.gra-cite { display: inline-block; background: var(--gra-green); color: var(--gra-on-green); font-weight: 700; font-size: .7rem;
+  border-radius: .35rem; padding: 0 .32rem; margin: 0 .1rem; vertical-align: .12em; cursor: help; }
+/* Requests found */
+.gra-requests { list-style: none; padding: 0 !important; margin: .2rem 0 .8rem; display: grid; gap: .35rem; }
+.gra-requests li { display: flex; gap: .55rem; align-items: baseline; flex-wrap: wrap; color: var(--gra-ink); }
+/* Draft vs final diff (Admin) */
+.gra-diff { line-height: 1.6; color: var(--gra-ink); overflow-wrap: anywhere; }
+.gra-diff del { background: var(--gra-err-bg); color: var(--gra-err-ink); text-decoration: line-through; }
+.gra-diff ins { background: var(--gra-ok-bg); color: var(--gra-ok-ink); text-decoration: underline; }
+/* Proposed tasks and manager items */
+.gra-item { background: var(--gra-surface); border: 1px solid var(--gra-line); border-radius: .7rem; padding: .55rem .8rem; margin: .3rem 0; }
+.gra-item b { color: var(--gra-ink); }
+.gra-item small { color: var(--gra-muted); display: block; margin-top: .15rem; }
+.gra-item.gra-approval { border-left: 4px solid var(--gra-brass); }
+/* Step timeline: icons line up, summaries wrap on phones */
+[data-testid="stExpander"] summary p { overflow-wrap: anywhere; }
+@media (max-width: 640px) { .block-container { padding-left: 1rem; padding-right: 1rem; } .gra-email, .gra-draft { padding: .75rem .85rem; } }

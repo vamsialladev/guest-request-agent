@@ -1,0 +1,45 @@
+# White-label branding. Change these values to rebrand the app for a client demo; the app re-reads this file when it
+# changes. The "Demo · simulated data · nothing is ever sent" label is not configurable and always stays.
+
+[product]
+name = "Guest Request Agent"
+full_name = "Guest Request Agent"
+tagline = "Reads a guest email, checks the booking and hotel policy, and drafts a cited reply for staff to approve."
+hotel_group = "Hotel Group"
+logo = "assets/logo.svg"
+icon = "assets/favicon.png"
+
+[colors]
+# Light mode. Keep .streamlit/config.toml's primaryColor in sync with these.
+primary = "#1E4636"
+accent = "#94702C"
+# Lighter versions for dark backgrounds, for contrast.
+primary_dark = "#8CC7AA"
+accent_dark = "#DDB874"
+
+[links]
+case_study = "https://vamsialla.com/projects/guest-request-agent.html"
+github = "https://github.com/vamsialladev/guest-request-agent"
+decisions = "https://github.com/vamsialladev/guest-request-agent/blob/main/docs/DECISIONS.md"
+project1 = "https://hotel-ops-assistant.streamlit.app"
+linkedin = "https://www.linkedin.com/in/vamsi-alla/"
+author = "Vamsi Alla"
+
+# One block per property. The key is the property tag.
+[properties.beach-resort]
+name = "Beach Resort"
+highlights = "rooftop pool, valet, spa"
+examples = [
+  "Hi, we arrive Friday with our 30 lb dog. Is there a pet fee, and can we check out late on Monday? Thanks, Elena",
+  "Do you have an Ocean View room for Thanksgiving weekend, 26 to 28 November? How much per night?",
+  "Our flight was cancelled. Can I extend my stay by one night and get a refund for the airport transfer?",
+]
+
+[properties.mountain-lodge]
+name = "Mountain Lodge"
+highlights = "dog-friendly, fire pits, airport shuttle"
+examples = [
+  "We're bringing two big dogs next weekend. What does that cost, and is there a shuttle from Asheville airport?",
+  "Is breakfast included, and can we check in early on Friday?",
+  "The Wi-Fi in our cabin keeps dropping. Can someone help?",
+]
