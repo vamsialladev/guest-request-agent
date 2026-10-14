@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "set": "visitor",
+    "label": "before",
+    "date": "2026-10-14",
+    "model": "claude-haiku-5-5",
+    "effort": "low",
+    "price_in": 0.1,
+    "price_out": 0.5,
+    "source": "eval/recorded/visitor-before.jsonl",
+    "runs": 1
+  },
+  "summary": {
+    "per_run": [
+      {
+        "emails": 10,
+        "first_email_success": 1.0,
+        "routing_correct": 1.0,
+        "emails_handled": 1.0
+      }
+    ],
+    "combined": {
+      "emails": {
+        "mean": 10.0,
+        "min": 10,
+        "max": 10
+      },
+      "first_email_success": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "routing_correct": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "emails_handled": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    "consistency": null
+  },
+  "scores": [
+    [
+      {
+        "id": "V01",
+        "expect": "greeting",
+        "outcome": "greeting",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 0,
+        "latency_s": 0.0,
+        "tokens_in": 0,
+        "tokens_out": 0
+      },
+      {
+        "id": "V02",
+        "expect": "off_topic",
+        "outcome": "off_topic",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 0,
+        "latency_s": 0.0,
+        "tokens_in": 0,
+        "tokens_out": 0
+      },
+      {
+        "id": "V03",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 3.399,
+        "tokens_in": 6689,
+        "tokens_out": 394
+      },
+      {
+        "id": "V04",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 2.851,
+        "tokens_in": 6553,
+        "tokens_out": 419
+      },
+      {
+        "id": "V05",
+        "expect": "email",
+        "outcome": "escalated",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 1,
+        "latency_s": 3.214,
+        "tokens_in": 3144,
+        "tokens_out": 388
+      },
+      {
+        "id": "V06",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 3.957,
+        "tokens_in": 6891,
+        "tokens_out": 737
+      },
+      {
+        "id": "V07",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 3.137,
+        "tokens_in": 7420,
+        "tokens_out": 519
+      },
+      {
+        "id": "V08",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 2.096,
+        "tokens_in": 6692,
+        "tokens_out": 267
+      },
+      {
+        "id": "V09",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 2,
+        "latency_s": 3.73,
+        "tokens_in": 7007,
+        "tokens_out": 509
+      },
+      {
+        "id": "V10",
+        "expect": "email",
+        "outcome": "drafted",
+        "first_email_success": true,
+        "reasons": [],
+        "api_calls": 3,
+        "latency_s": 4.996,
+        "tokens_in": 10092,
+        "tokens_out": 719
+      }
+    ]
+  ]
+}
