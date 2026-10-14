@@ -33,6 +33,7 @@ from src.models import (
     Step,
     Task,
 )
+from src.policy.config import TOP_K as POLICY_TOP_K
 
 PROPERTY_NAMES = {"beach-resort": "Beach Resort", "mountain-lodge": "Mountain Lodge"}
 DEPARTMENT_NAMES = {
@@ -232,7 +233,7 @@ def passage_title(chunk: dict) -> str:
 
 def search_policy(ctx: ToolContext, args: SearchPolicyInput) -> tuple[dict, str]:
     prop = args.property or ctx.property
-    chunks = policy_search.search(args.question, prop, k=3)
+    chunks = policy_search.search(args.question, prop, k=POLICY_TOP_K)
     results = []
     for chunk in chunks:
         existing = next((pid for pid, c in ctx.hits.items() if c["id"] == chunk["id"]), None)

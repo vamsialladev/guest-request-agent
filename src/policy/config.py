@@ -12,5 +12,6 @@ RAW_DIR = ROOT / "data" / "policy" / "raw"
 INDEX_DIR = Path(os.getenv("POLICY_INDEX_DIR", ROOT / "data" / "policy_index"))
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # unused: embeddings are off in Project 2
 USE_EMBEDDINGS = False
-TOP_K = int(os.getenv("POLICY_TOP_K", "3"))
+# Project 1's tested setting. Top 3 missed "Is there a resort fee?" (docs/DECISIONS.md #16).
+TOP_K = int(os.getenv("POLICY_TOP_K", "5"))
 SHARED = "shared"
