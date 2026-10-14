@@ -4,6 +4,8 @@
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
 ![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Coverage 98%](https://img.shields.io/badge/coverage-98%25-brightgreen)
+[![Live demo](https://img.shields.io/badge/live%20demo-streamlit-FF4B4B)](https://guest-request-agent.streamlit.app)
 
 **An AI agent that reads a guest email, finds every request, checks the booking, availability and hotel policy, and
 drafts a cited reply with proposed staff tasks. A person approves, edits or rejects. Nothing is sent without approval,
@@ -14,6 +16,7 @@ and in this demo nothing is ever sent at all.**
 > the hotel policies are Project 1's synthetic documents. Business value is a projection from stated assumptions.
 
 🔗 **[Live demo](https://guest-request-agent.streamlit.app)** (no sign-in) · 🎥 **[2-minute demo video](https://vamsialla.com/videos/guest-request-agent-demo.mp4)** (narrated, captioned) · 📄 **[Case study](https://vamsialla.com/projects/guest-request-agent.html)** · 💰 **[Business case](docs/BUSINESS_CASE.md)** · 🏗️ **[Architecture](docs/ARCHITECTURE.md)** · 🧭 **[Decisions](docs/DECISIONS.md)**
+<sub>Free hosting: if the app is asleep, click ‘wake up’ and give it about 30 seconds.</sub>
 
 ## See it in action
 
