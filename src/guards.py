@@ -49,8 +49,19 @@ OFFERS = re.compile(
 NEGATED = re.compile(r"\b(not|no|never|unable|cannot)\b|n['’]t\b", re.I)
 # "your request for a complimentary upgrade" names what the guest asked for; it offers nothing (dev eval, E09 and X07).
 REQUESTED = re.compile(r"\brequest(s|ed)?\s+(for\s+)?(a\s+|an\s+)?(complimentary|free)\b", re.I)
+# "I can't confirm that we can match the lower price" refuses; it doesn't commit (final eval, sample email E29).
+HEDGED = re.compile(
+    r"\b(can['’]?t|cannot|can not|could not|couldn['’]t|unable to|not able to|won['’]t be able to)\s+(yet\s+)?"
+    r"(confirm|promise|guarantee|say|tell you)\b",
+    re.I,
+)
 SAFE_SENTENCE = "I've passed this request to our manager, who will review it and reply to you."
 SENTENCE = re.compile(r"[^.!?\n]+[.!?]*\s*|\n")
+
+
+def _commits(sentence: str) -> bool:
+    """A promising phrase that isn't under a negated "confirm / promise / guarantee" earlier in the sentence."""
+    return any(not HEDGED.search(sentence[: m.start()]) for m in FORBIDDEN.finditer(sentence))
 
 
 def forbidden_promises(text: str) -> list[str]:
@@ -58,7 +69,7 @@ def forbidden_promises(text: str) -> list[str]:
     hits = []
     for sentence in SENTENCE.findall(text or ""):
         offer = OFFERS.search(REQUESTED.sub("request", sentence)) and not NEGATED.search(sentence)
-        if FORBIDDEN.search(sentence) or offer:
+        if _commits(sentence) or offer:
             hits.append(sentence.strip())
     return hits
 

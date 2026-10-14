@@ -30,6 +30,7 @@ from src.guards import (
         "Le reembolsaremos el importe.",
         "Breakfast is on us tomorrow.",
         "We comped your breakfast.",
+        "I can confirm that we will refund the full amount.",
         "Enjoy a complimentary upgrade to our Suite!",
     ],
 )
@@ -55,6 +56,9 @@ def test_promises_are_caught(text):
         "I have passed your request for a complimentary upgrade to a manager for review.",
         "I wasn't able to confirm whether we match outside rates, so please don't assume a match.",
         "Please send the link so we can compare like for like.",
+        "I could not find a price-match policy in our documents, so I can't confirm that we can match the other "
+        "website's price.",
+        "We cannot guarantee that we can extend your stay until a manager reviews it.",
     ],
 )
 def test_describing_policy_or_passing_on_a_request_is_fine(text):
