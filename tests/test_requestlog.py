@@ -94,3 +94,8 @@ def test_diff_and_draft_html_escape_everything():
     assert "<del>" in html and "<ins>" in html and "&lt;b&gt;" in html
     draft = draft_html("Fee <script>x</script> [P1]", {"P1": 'Pets "policy"'})
     assert "&lt;script&gt;" in draft and 'class="gra-cite" title="Pets &quot;policy&quot;">P1<' in draft
+
+
+def test_diff_ignores_citation_markers_and_keeps_line_breaks():
+    html = diff_html("At the restaurant [P1].\n\nWarm regards", "At the restaurant.\n\nSee you!\n\nWarm regards")
+    assert "<del>" not in html and html.count("<ins>") == 1 and "See you!" in html

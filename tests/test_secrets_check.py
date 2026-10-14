@@ -9,12 +9,8 @@ FAKE = {"ANTHROPIC_API_KEY": "sk-ant-fake-for-tests", "ADMIN_PASSWORD": "fake-ad
 
 def test_status_is_only_set_or_missing():
     status = secret_status(FAKE)
-    assert status == {
-        "ANTHROPIC_API_KEY": "set",
-        "ADMIN_PASSWORD": "set",
-        "PRICE_IN_PER_M": "set",
-        "PRICE_OUT_PER_M": "missing",
-    }
+    # Only secrets: prices are configuration with documented defaults, not secrets.
+    assert status == {"ANTHROPIC_API_KEY": "set", "ADMIN_PASSWORD": "set"}
     assert "sk-ant-fake-for-tests" not in str(status) and "fake-admin-pass" not in str(status)
 
 

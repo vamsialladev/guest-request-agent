@@ -20,8 +20,8 @@ BOOKINGS_DB = Path(os.getenv("BOOKINGS_DB", DATA_DIR / "bookings.sqlite"))
 INBOX_FILE = DATA_DIR / "inbox.jsonl"
 
 
-def _float(name: str) -> float | None:
-    value = os.getenv(name, "").strip()
+def _float(name: str, default: str = "") -> float | None:
+    value = os.getenv(name, default).strip()
     return float(value) if value else None
 
 
@@ -42,9 +42,10 @@ MAX_EMAILS_PER_SESSION = int(os.getenv("MAX_EMAILS_PER_SESSION", "10"))
 MAX_EMAILS_PER_DAY = int(os.getenv("MAX_EMAILS_PER_DAY", "150"))
 LOG_MAX_ENTRIES = int(os.getenv("LOG_MAX_ENTRIES", "5000"))
 
-# USD per million tokens, used only for cost estimates. Unset = cost shown as "not configured".
-PRICE_IN_PER_M = _float("PRICE_IN_PER_M")
-PRICE_OUT_PER_M = _float("PRICE_OUT_PER_M")
+# USD per million tokens, used only for cost estimates (defaults: Claude Haiku 5.5 list prices, Oct 2026).
+# Set to an empty value to show cost as "not configured".
+PRICE_IN_PER_M = _float("PRICE_IN_PER_M", "0.10")
+PRICE_OUT_PER_M = _float("PRICE_OUT_PER_M", "0.50")
 
 # Owner monitoring (Admin page)
 ALERT_ERROR_RATE = float(os.getenv("ALERT_ERROR_RATE", "0.2"))

@@ -62,17 +62,27 @@ def model_name(model_id: str | None) -> str:
 
 def diff_html(before: str, after: str) -> str:
     """Word-level diff of the agent's draft vs the text staff sent: removed words struck through, added underlined."""
-    a, b = (before or "").split(" "), (after or "").split(" ")
+    # Words and the whitespace between them are separate tokens, so a line break never glues two words together.
+    # Citation markers are removed first: the guest never sees them (found in the first Admin screenshot).
+    a = re.split(r"(\s+)", strip_citation_markers(before or ""))
+    b = re.split(r"(\s+)", after or "")
     out = []
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        old, new = "".join(a[i1:i2]), "".join(b[j1:j2])
         if op == "equal":
-            out.append(esc(" ".join(a[i1:i2])))
-        if op in ("delete", "replace"):
-            out.append(f"<del>{esc(' '.join(a[i1:i2]))}</del>")
-        if op in ("insert", "replace"):
-            out.append(f"<ins>{esc(' '.join(b[j1:j2]))}</ins>")
-    return '<div class="gra-diff">' + " ".join(out).replace("\n", "<br>") + "</div>"
+            out.append(esc(old))
+        if op in ("delete", "replace") and old.strip():
+            out.append(f"<del>{esc(old)}</del>")
+        if op in ("insert", "replace") and new.strip():
+            out.append(f"<ins>{esc(new)}</ins>")
+        elif op in ("insert", "replace"):
+            out.append(esc(new))  # changed whitespace only: keep the layout, mark nothing
+    return '<div class="gra-diff">' + "".join(out).replace("\n", "<br>") + "</div>"
+
+
+def strip_citation_markers(text: str) -> str:
+    return re.sub(r"\s?\[P\d+\]", "", text)
 
 
 def changed(before: str, after: str) -> bool:
-    return " ".join((before or "").split()) != " ".join((after or "").split())
+    return " ".join(strip_citation_markers(before or "").split()) != " ".join((after or "").split())

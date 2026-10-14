@@ -62,6 +62,9 @@ event = st.dataframe(
     selection_mode="single-row",
     key=f"inbox_{prop}_{status}_{escalated_only}",
 )
+linked = st.query_params.get("email")  # ?email=E05 opens one sample email (shareable links, the demo video)
+if linked in by_id and st.session_state.get("linked_email") != linked:
+    st.session_state.linked_email = st.session_state.inbox_open = linked
 picked = event.selection.rows[0] if event and event.selection.rows else None
 selected_id = shown[picked]["id"] if picked is not None and picked < len(shown) else st.session_state.get("inbox_open")
 if selected_id not in by_id:

@@ -184,3 +184,10 @@ def test_no_downloads_on_visitor_pages(app, path):
     at, _ = app
     open_page(at, path)
     assert not at.get("download_button")
+
+
+def test_inbox_link_opens_one_sample_email(app):
+    at, _ = app
+    at.query_params["email"] = "E14"
+    at.run()
+    assert not at.exception and any("Urgent: system update" in s.value for s in at.subheader)

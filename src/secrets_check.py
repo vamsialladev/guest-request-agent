@@ -8,7 +8,6 @@ import logging
 import os
 
 REQUIRED = ("ANTHROPIC_API_KEY", "ADMIN_PASSWORD")
-RECOMMENDED = ("PRICE_IN_PER_M", "PRICE_OUT_PER_M")  # cost estimates on the Admin page
 PLACEHOLDER_PREFIXES = ("your-", "change-me", "replace-me")  # copied from an example file, never filled in
 
 log = logging.getLogger("guest_agent.config")
@@ -19,7 +18,7 @@ def is_set(value: str | None) -> bool:
     return bool(value) and not value.lower().startswith(PLACEHOLDER_PREFIXES)
 
 
-def secret_status(env=None, names=REQUIRED + RECOMMENDED) -> dict[str, str]:
+def secret_status(env=None, names=REQUIRED) -> dict[str, str]:
     env = os.environ if env is None else env
     return {name: "set" if is_set(env.get(name)) else "missing" for name in names}
 
