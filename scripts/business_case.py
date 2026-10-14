@@ -8,7 +8,7 @@ python scripts/business_case.py --properties 100 --emails 30 --wage 24
 
 import argparse
 
-MEASURED_COST_PER_EMAIL = 0.0012  # USD, Claude Haiku 5.5, final eval (docs/BUSINESS_CASE.md)
+MEASURED_COST_PER_EMAIL = 0.0013  # USD: $1.30 per 1,000 emails, Claude Haiku 5.5, final eval 2026-10-14
 
 
 def project(properties, emails, minutes_saved, wage, comps_avoided, comp_cost, cost_per_email, hosting_per_year):
