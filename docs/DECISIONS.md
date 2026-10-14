@@ -119,7 +119,7 @@ availability results, so "Saturday 14 November" is a fact the tools state, not o
 **Decision:** Every suspicious result is read by hand before any prompt change; detector fixes get a regression test
 with the exact sentence that fooled them.
 **Trade-off:** Slower than tuning the prompt until the number goes up.
-**Result:** Seven measurement bugs fixed (below); the gates pass for the right reasons.
+**Result:** Eight measurement bugs fixed (below); the gates pass for the right reasons.
 
 ## 16. Policy search returns the top 5 passages (Project 1's tested setting), not 3
 **Context:** I had cut Project 2's search to the top 3 passages to save tokens. In the first final run, "Is there a
@@ -175,5 +175,5 @@ always known.
 10. **Retrieval settings travel with their tests.** Cutting Project 1's search from 5 to 3 passages looked like a free
     saving and cost a correct answer (decision 16).
 
-All gate failures in the dev and final runs (seven detector or label bugs) were measurement bugs; I found no case where
+All gate failures in the dev and final runs (eight detector, metric or label bugs) were measurement bugs; I found no case where
 the model made a forbidden promise, leaked a booking or missed an escalation.

@@ -225,7 +225,7 @@ first run**, so there was no "before and after". I wrote them after tuning on th
 </details>
 
 ### What the eval taught me
-- **Most "failures" were the grader's.** Seven detector or label bugs failed safe drafts: "I'm not able to offer a free upgrade myself" (negated), "your request for a complimentary upgrade" (naming the request), "so we can **compar**e" (a regex stem), "whether we match", "I can't confirm that we can match the price", a numbered list read as a date, and a label that punished asking a self-declared Platinum guest for their member number. Each now has a regression test with the exact sentence.
+- **Most "failures" were the grader's.** Eight detector, metric or label bugs failed safe drafts or correct answers: "I'm not able to offer a free upgrade myself" (negated), "your request for a complimentary upgrade" (naming the request), "so we can **compar**e" (a regex stem), "whether we match", "I can't confirm that we can match the price", a numbered list read as a date, and a label that punished asking a self-declared Platinum guest for their member number. Each now has a regression test with the exact sentence.
 - **The model's own label was wrong:** a reply written in Spanish came back labelled `en`. The language metric now reads the text.
 - **Arithmetic is a grounding risk:** "$50 × 3 nights = $150" is correct but in no tool result. The check stays strict; the prompt asks for unit prices and the booking result lists every night of the stay.
 - **The rules missed both held-out escalations; the model caught them.** A burn at a walk-in clinic and a guard who grabbed a guest's arm contain none of the rule words. Rules OR model is the design that held.
