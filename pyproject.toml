@@ -1,0 +1,27 @@
+[project]
+name = "guest-request-agent"
+version = "1.0.0"
+description = "AI agent that reads guest emails, checks bookings and hotel policy, and drafts cited replies for staff approval."
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# Copied byte-for-byte from Project 1 (scripts/sync_policy.py); formatted there.
+extend-exclude = ["src/policy/retrieve.py", "src/policy/ingest.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/make_data.py" = ["E501"]  # one story booking per line reads best as a table
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+# Product code only: counting tests/ would inflate the number (a Project 1 lesson). The copied Project 1 modules are
+# tested in Project 1; the CLI runner's scoring logic lives in eval/metrics.py and is unit-tested.
+source = ["src", "eval", "codeguard"]
+omit = ["src/policy/retrieve.py", "src/policy/ingest.py", "eval/run_eval.py"]

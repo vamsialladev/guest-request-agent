@@ -1,0 +1,57 @@
+# Streamlit settings, used locally, in Docker and on Streamlit Community Cloud.
+
+[server]
+# Keep the file watcher on: Streamlit Community Cloud needs it to pick up each push to main (Project 1 decision 39).
+# Skip folders that change at runtime (logs, the policy index) or hold many files.
+fileWatcherType = "auto"
+folderWatchBlacklist = [".venv", "venv", "data", "eval/reports", "eval/recorded", "docs", ".git"]
+maxUploadSize = 1
+
+[client]
+# Hide the developer menu and Deploy button from visitors.
+toolbarMode = "minimal"
+# Never show Python tracebacks to visitors; errors are logged privately instead.
+showErrorDetails = "none"
+
+[browser]
+gatherUsageStats = false
+
+# Brand theme. The app follows the viewer's system light/dark setting.
+# Same theme as Project 1. Colors match the portfolio site (and branding.toml): green #1E4636, brass #94702C.
+[theme]
+font = "Public Sans:https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap, sans-serif"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap, serif"
+baseRadius = "0.6rem"
+showWidgetBorder = true
+
+[theme.light]
+primaryColor = "#1E4636"
+backgroundColor = "#F5F7F6"
+secondaryBackgroundColor = "#E6EEEA"
+textColor = "#16231E"
+borderColor = "#D3DCD8"
+linkColor = "#1E4636"
+greenColor = "#1E6B45"
+yellowColor = "#94702C"
+redColor = "#B42318"
+blueColor = "#2F5F7A"
+chartCategoricalColors = ["#1E4636", "#94702C", "#5E8C76", "#C9A86A", "#3B6E8F"]
+
+[theme.light.sidebar]
+backgroundColor = "#E6EEEA"
+
+[theme.dark]
+primaryColor = "#8CC7AA"
+backgroundColor = "#121A17"
+secondaryBackgroundColor = "#1A2420"
+textColor = "#E5ECE8"
+borderColor = "#2E3D37"
+linkColor = "#8CC7AA"
+greenColor = "#8CC7AA"
+yellowColor = "#DDB874"
+redColor = "#F97066"
+blueColor = "#7FA9C4"
+chartCategoricalColors = ["#8CC7AA", "#DDB874", "#5E9C80", "#B8975A", "#7FA9C4"]
+
+[theme.dark.sidebar]
+backgroundColor = "#1A2420"

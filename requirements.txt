@@ -1,0 +1,9 @@
+# Core runtime: the agent, keyword policy search and the Streamlit app. This is what Streamlit Cloud installs.
+# "~=" allows bug-fix updates only, so installs are reproducible. Dependabot proposes upgrades.
+anthropic~=1.12
+pydantic~=2.14
+rank-bm25==0.2.2
+pypdf~=6.19
+numpy~=2.5
+python-dotenv~=1.2
+streamlit~=1.65.0

@@ -1,0 +1,28 @@
+.env
+.streamlit/secrets.toml
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+.coverage
+.pytest_cache/
+.ruff_cache/
+
+# Built on first start (seeded, reproducible): never committed
+data/bookings.sqlite
+data/*.tmp
+data/policy_index/
+# Runtime logs and counters: contain guest emails as typed. Never commit.
+data/logs/
+logs/
+review/
+
+# Demo video and its raw recording (published on the portfolio site, not in this repo)
+docs/video/
+
+# Private brand notes, drafts and photos (kept outside the repos; never commit)
+brand-content/
+
+# Old resume versions (kept outside the repos; never commit)
+resume-archive/
