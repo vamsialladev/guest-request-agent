@@ -13,9 +13,12 @@ and in this demo nothing is ever sent at all.**
 > properties, a beach resort and a mountain lodge. Guests, bookings and emails are synthetic (`@example.com`);
 > the hotel policies are Project 1's synthetic documents. Business value is a projection from stated assumptions.
 
-🔗 **[Live demo](https://guest-request-agent.streamlit.app)** (no sign-in) · 📄 **[Case study](https://vamsialla.com/projects/guest-request-agent.html)** · 💰 **[Business case](docs/BUSINESS_CASE.md)** · 🏗️ **[Architecture](docs/ARCHITECTURE.md)** · 🧭 **[Decisions](docs/DECISIONS.md)**
+🔗 **[Live demo](https://guest-request-agent.streamlit.app)** (no sign-in) · 🎥 **[2-minute demo video](https://vamsialla.com/videos/guest-request-agent-demo.mp4)** (narrated, captioned) · 📄 **[Case study](https://vamsialla.com/projects/guest-request-agent.html)** · 💰 **[Business case](docs/BUSINESS_CASE.md)** · 🏗️ **[Architecture](docs/ARCHITECTURE.md)** · 🧭 **[Decisions](docs/DECISIONS.md)**
 
-<!-- Demo GIF and 2-minute video: added after recording from the live app (docs/images/README.md). -->
+## See it in action
+
+<p align="center"><img src="docs/images/demo.gif" alt="On the live app, the agent works through Elena's three-request email: booking found, three hotel policies searched and cited, two staff tasks proposed, checks passed, then the cited draft" width="760"></p>
+<p align="center"><strong><a href="https://vamsialla.com/projects/guest-request-agent.html#demo">▶ Watch the 2-minute demo (with narration)</a></strong> · <strong><a href="https://guest-request-agent.streamlit.app">Try the live app</a></strong> (no sign-in, nothing is ever sent)</p>
 
 ---
 
