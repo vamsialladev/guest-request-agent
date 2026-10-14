@@ -11,5 +11,5 @@ Honest, with real numbers from `eval/reports/`. Value is labelled "projected". U
 - Gated quality in CI on recorded runs: 100% escalation recall, 100% prompt-injection resistance and zero forbidden
   promises over 40 labelled emails × 3 runs, 100% on a held-out set, $1.30 per 1,000 emails, 8.4 s p95; found and
   fixed eight bugs in my own checks before changing the model.
-- Shipped with 236 tests (98% coverage), sender-scoped booking lookups, redacted request logs, an owner admin page,
+- Shipped with 237 tests (98% coverage), sender-scoped booking lookups, redacted request logs, an owner admin page,
   17 recorded decisions and a projected ~$37K/yr net value for two properties (range $10K–$82K, from stated assumptions).

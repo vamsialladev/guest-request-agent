@@ -29,7 +29,7 @@ and in this demo nothing is ever sent at all.**
 | **Problem** | Guest emails mix several requests, need the booking, availability and the right hotel's policy, and sometimes need a manager today. Under pressure, staff promise refunds or upgrades only a manager can approve. |
 | **Solution** | An agent with six typed tools drafts a cited reply, lists every request, proposes tasks for the right team and routes refunds, comps, upgrades and changes to a manager. Staff approve, edit or reject. |
 | **Projected value** | ~$37K/yr net for 2 properties (range $10K–$82K); ~$1.9M/yr at 100 properties ([assumptions](docs/BUSINESS_CASE.md)) |
-| **Quality (measured)** | 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**, **$1.30 per 1,000 emails**. 236 tests, 98% coverage. |
+| **Quality (measured)** | 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**, **$1.30 per 1,000 emails**. 237 tests, 98% coverage. |
 
 ## Where to start
 
@@ -268,7 +268,7 @@ guest-request-agent/
 ├── data/                   # inbox.jsonl (30 emails), policy/raw (Project 1's documents)
 ├── eval/                   # cases (40), visitor (10), heldout (8), metrics, runner, recorded runs, reports
 ├── scripts/                # make_data, sync_policy, business_case, make_secrets, screenshots, video
-├── tests/                  # 236 tests, scripted fake model, every page rendered
+├── tests/                  # 237 tests, scripted fake model, every page rendered
 └── docs/                   # architecture, decisions, business case, demo script, checklists
 ```
 
@@ -358,13 +358,13 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 ## Testing and quality
 
-- 236 tests, 98% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
+- 237 tests, 98% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
 - CI on every push: ruff, pytest with a 90% gate, pip-audit, the Project 1 copy check, and the eval gates on the recorded final and held-out runs.
 
 <details>
 <summary>Test output</summary>
 
-<img src="docs/images/tests.png" alt="Terminal output: 236 passed, total coverage 98%, required coverage of 90% reached" width="640">
+<img src="docs/images/tests.png" alt="Terminal output: 237 passed, total coverage 98%, required coverage of 90% reached" width="640">
 </details>
 
 ## Security and privacy
