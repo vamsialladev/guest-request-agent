@@ -42,4 +42,4 @@ once. Report the result separately, whatever it is.
 
 ## 5. Screenshots and video
 - [x] Screenshots in `docs/images/` captured from the real app (`scripts/capture_screenshots.py`).
-- [x] Narrated demo video (1:36) recorded from the live app (`scripts/record_demo.py`); frames checked for secrets. Published at https://vamsialla.com/videos/guest-request-agent-demo.mp4.
+- [x] Narrated demo video (1:33) recorded from the live app (`scripts/record_demo.py`); frames checked for secrets. Published at https://vamsialla.com/videos/guest-request-agent-demo.mp4.
