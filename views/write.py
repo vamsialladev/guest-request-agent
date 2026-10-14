@@ -64,12 +64,8 @@ body = st.text_area(
     max_chars=MAX_EMAIL_CHARS,
     placeholder="Hi, we arrive Friday with our dog. Is there a pet fee, and can we check out late?",
 )
-left = MAX_EMAILS_PER_SESSION - ui.emails_sent_to_agent()
 go = st.button("Run the agent", type="primary", icon=":material/smart_toy:", disabled=no_key)
-st.caption(
-    f"Don't enter real personal details. {max(left, 0)} of {MAX_EMAILS_PER_SESSION} emails left in this "
-    "session. Greetings and off-topic text get a quick reply without using the agent."
-)
+note = st.empty()  # filled after a run, so the count includes it (it showed the old count in the first live test)
 
 if go:
     email = Email(sender=sender[0], subject=subject.strip(), body=body, sender_name=sender[1])
@@ -97,6 +93,12 @@ if go:
             "body": email.body,
         },
     )
+
+left = MAX_EMAILS_PER_SESSION - ui.emails_sent_to_agent()
+note.caption(
+    f"Don't enter real personal details. {max(left, 0)} of {MAX_EMAILS_PER_SESSION} emails left in this "
+    "session. Greetings and off-topic text get a quick reply without using the agent."
+)
 
 if "write_result" in st.session_state:
     result, request_id, email = st.session_state.write_result

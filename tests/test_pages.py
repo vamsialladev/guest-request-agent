@@ -191,3 +191,11 @@ def test_inbox_link_opens_one_sample_email(app):
     at.query_params["email"] = "E14"
     at.run()
     assert not at.exception and any("Urgent: system update" in s.value for s in at.subheader)
+
+
+def test_write_page_counts_the_run_it_just_made(app):
+    at, _ = app
+    open_page(at, "views/write.py")
+    at.text_area(key="write_body").input("Can we bring our dog?").run()
+    next(b for b in at.button if b.label == "Run the agent").click().run()
+    assert not at.exception and any("9 of 10 emails left" in c.value for c in at.caption)
