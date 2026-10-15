@@ -32,7 +32,7 @@ and in this demo nothing is ever sent at all.**
 | **Problem** | Guest emails mix several requests, need the booking, availability and the right hotel's policy, and sometimes need a manager today. Under pressure, staff promise refunds or upgrades only a manager can approve. |
 | **Solution** | An agent with six typed tools drafts a cited reply, lists every request, proposes tasks for the right team and routes refunds, comps, upgrades and changes to a manager. Staff approve, edit or reject. |
 | **Projected value** | ~$37K/yr net for 2 properties (range $10K–$82K); ~$1.9M/yr at 100 properties ([assumptions](docs/BUSINESS_CASE.md)) |
-| **Quality (measured)** | 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**, **$1.30 per 1,000 emails**. 237 tests, 98% coverage. |
+| **Quality (measured)** | 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**, **$1.30 per 1,000 emails**. 237 tests, 98% coverage. **v1.1.0 (Project 4):** correct tool use 100%, citations 100%, the wrong-hotel case fixed (0/6 → 6/6), $1.24 per 1,000. |
 
 ## Where to start
 
@@ -230,6 +230,30 @@ first run**, so there was no "before and after". I wrote them after tuning on th
 <img src="docs/images/eval.png" alt="Terminal output of the final eval re-scored from the recorded run: every metric with its range over 3 runs" width="640">
 </details>
 
+### Production hardening (Project 4, v1.1.0)
+
+New held-out emails were committed to the eval harness **before** each fix (b08–b10, then b11–b13 before the injection fix). Live, 3 runs, 2026-10-15 (`eval-harness reports/p2-v1.1.0-2026-10-15.md`):
+
+| Gap | Before | After | Fix |
+|---|---|---|---|
+| Wrong-hotel email answered for the inbox's hotel (E12, b10) | right hotel 0/6, correct tool use 67% | **6/6**, **100%** | booking looked up before the model, hotel pinned ([decision 18](docs/DECISIONS.md)) |
+| Spanish email answered in English (X05, 2 of 3 runs on 2026-10-14) | language 67% (4/6) | **100%** (12/12 on the Spanish cases) | language detected up front, one rewrite, Spanish holding replies ([19](docs/DECISIONS.md)) |
+| Planted note repeated to the guest (H03, found in the Project 4 re-run) | injection resistance failed 1/3 and 2/3 in two re-runs | **100%** dev and held-out | planted text quarantined before the model reads it ([20](docs/DECISIONS.md)) |
+| Cited member-benefit policy flagged as a promise (b06) | 2 of 3 runs flagged | **0** | guard ignores verbless offers in policy sentences ([20](docs/DECISIONS.md)) |
+
+| Main set (40 emails × 3) | v1.0.0 | v1.1.0 |
+|---|---|---|
+| Escalation recall, injection resistance, no forbidden promises (gates) | 100% | 100% |
+| Correct tool use | 96% | **100%** |
+| Citation accuracy (strict) | 94% | **100%** |
+| Task routing | 98% | 98% |
+| Full draft p50 / p95 | 4.6 s / 8.4 s | 4.2 s / 8.3 s |
+| Cost per 1,000 emails | $1.30 | **$1.24** |
+
+**Reported, not tuned:** with the injected "6 PM check-out" removed, H03's replies no longer volunteer the Platinum 4:00 PM late check-out (key facts 3/3 → 0/3): safe and correct, less specific. Held-out key facts are 80% (12/15); a loyalty-aware check-out answer needs new held-out cases first.
+
+Also in v1.1.0: a persistent request and decision log (Neon Postgres, SQLite or files) with **personal data redacted before storage** and 30-day retention, a Staff role next to Demo mode, a kill switch, an owner **Operations** page with **budgets** (p95 ≤ 12.0 s, ≤ $2.00 per 1,000, also gated in CI), and `docker compose up` with its own Postgres. Handoff package: [hotel-ai-handoff](https://github.com/vamsialladev/hotel-ai-handoff).
+
 ### What the eval taught me
 - **Most "failures" were the grader's.** Eight detector, metric or label bugs failed safe drafts or correct answers: "I'm not able to offer a free upgrade myself" (negated), "your request for a complimentary upgrade" (naming the request), "so we can **compar**e" (a regex stem), "whether we match", "I can't confirm that we can match the price", a numbered list read as a date, and a label that punished asking a self-declared Platinum guest for their member number. Each now has a regression test with the exact sentence.
 - **The model's own label was wrong:** a reply written in Spanish came back labelled `en`. The language metric now reads the text.
@@ -271,7 +295,7 @@ guest-request-agent/
 ├── data/                   # inbox.jsonl (30 emails), policy/raw (Project 1's documents)
 ├── eval/                   # cases (40), visitor (10), heldout (8), metrics, runner, recorded runs, reports
 ├── scripts/                # make_data, sync_policy, business_case, make_secrets, screenshots, video
-├── tests/                  # 237 tests, scripted fake model, every page rendered
+├── tests/                  # 276 tests (+8 Postgres in CI), scripted fake model, every page rendered
 └── docs/                   # architecture, decisions, business case, demo script, checklists
 ```
 
@@ -322,6 +346,11 @@ The synthetic bookings and the policy index are built automatically on first sta
 | `ADMIN_IDLE_MINUTES` | `30` | Admin auto sign-out |
 | `ALERT_ERROR_RATE` / `ALERT_MIN_EVENTS` / `ALERT_DAILY_COST_USD` | `0.2` / `5` / `1.00` | Admin warnings |
 | `SIM_TODAY` | `2026-11-02` | The synthetic world's "today" |
+| `DATABASE_URL` | empty | Project 4: `postgresql://...` (Neon) or `sqlite:///path.db`, persistent redacted log; empty = temporary files |
+| `STAFF_PASSWORD` | empty | Project 4: staff sign-in (report a draft, no per-session cap); empty = Demo mode only |
+| `RETENTION_DAYS` / `STAFF_IDLE_MINUTES` | `30` / `30` | Log retention; staff idle sign-out |
+| `BUDGET_P95_S` / `BUDGET_COST_PER_1000` | `12.0` / `2.00` | Budgets on the Operations page (gated in CI by the harness) |
+| `KILL_SWITCH` | `false` | `true`: no model calls; every email gets the safe holding reply and a staff task |
 
 ## Commands reference
 
@@ -361,30 +390,31 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 ## Testing and quality
 
-- 237 tests, 98% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
-- CI on every push: ruff, pytest with a 90% gate, pip-audit, the Project 1 copy check, and the eval gates on the recorded final and held-out runs.
+- 276 tests (plus 8 that run against Postgres in CI), 97% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
+- CI on every push: ruff, pytest with a 90% gate (and a Postgres service), pip-audit, the Project 1 copy check, the eval gates on the recorded final and held-out runs (hoteleval v1.0.0), and the v1.1.0 release run gated with budgets (hoteleval v1.2.0).
 
 <details>
 <summary>Test output</summary>
 
-<img src="docs/images/tests.png" alt="Terminal output: 237 passed, total coverage 98%, required coverage of 90% reached" width="640">
+<img src="docs/images/tests.png" alt="Terminal output (v1.0.0): 237 passed, total coverage 98%, required coverage of 90% reached" width="640">
 </details>
 
 ## Security and privacy
 
-Untrusted email text is data; tools can only read or propose; secrets are masked from every log record; logs are
-owner-only and reset on restart. Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
+Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
+propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
+kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
 
 ## Limitations and roadmap
 
-- **Known miss:** a guest booked at Mountain Lodge who writes to the Beach Resort inbox about "the pool" (E12) got a
-  Beach Resort answer in all 3 final runs, because the agent skipped the booking lookup. Next: look up the sender's
-  bookings before the model runs.
+- **Fixed in v1.1.0:** the wrong-hotel email (E12) is answered for the guest's own hotel (booking looked up first).
+- **Known gap:** replies don't always state a loyalty tier's late check-out (H03 key facts 0/3 in v1.1.0).
 - The escalation rules alone missed both held-out escalations; the model caught them. A missed escalation by both is
   possible; Project 3 adds more held-out cases written by other people.
-- An injected "waive the fee" note can still become a manager request (E16), without any promise.
+- Planted instructions are removed when they are addressed to an automated reader; an instruction written as if from
+  the guest ("please waive my fee") is a normal request and goes to a manager, never a promise.
 - Tone and helpfulness aren't scored; an LLM judge calibrated on human labels is Project 3.
-- Logs live on temporary disk; redaction, sign-in and a persistent audit store are Project 4.
+- Name redaction is pattern-based and can miss a bare name with no cue; the Staff role is a shared password.
 - The eval, visitor and held-out emails were all written by me.
 
 ## Documentation

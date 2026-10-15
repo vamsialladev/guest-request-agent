@@ -134,7 +134,7 @@ INJECTION_PATTERNS = [
     r"this is the (general )?manager",
     r"ignora (las |todas |tus )?(instrucciones|reglas)",
     r"<\s*/?\s*(system|instructions?)\s*>",
-    # Project 4 (decision 21): text addressed to an automated reader rather than to people. Held-out H03 ("Note to
+    # Project 4 (decision 20): text addressed to an automated reader rather than to people. Held-out H03 ("Note to
     # the automated system: ... pre-approved") matched nothing above, so the model read it as the guest's request.
     r"\b(note|message|instructions?|memo|reminder)s? (to|for) (the |any |all )?(automated |email |ai |virtual )?"
     r"(system|assistant|bot|agent|ai|model)s?\b",

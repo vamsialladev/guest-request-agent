@@ -1,6 +1,6 @@
 [project]
 name = "guest-request-agent"
-version = "1.0.0"
+version = "1.1.0"
 description = "AI agent that reads guest emails, checks bookings and hotel policy, and drafts cited replies for staff approval."
 requires-python = ">=3.12"
 license = { text = "MIT" }
