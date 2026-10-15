@@ -1,4 +1,4 @@
-# Copied from Project 1 (hotel-ops-assistant 1.5.0, commit 1e7ae1e), src/retrieve.py.
+# Copied from Project 1 (hotel-ops-assistant 1.5.0, commit 7b711aa), src/retrieve.py.
 # Do not edit here: change it in Project 1, then run `python scripts/sync_policy.py --ref <commit>`.
 # Only the import lines are rewritten (src.config -> src.policy.config, src.ingest -> src.policy.ingest).
 """Hybrid search: keyword (BM25) + meaning (embeddings), merged with Reciprocal Rank Fusion.
@@ -6,6 +6,7 @@ Results are always filtered to the selected property + brand-wide (shared) docum
 
 import json
 import re
+import unicodedata
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -69,9 +70,105 @@ SYNONYMS = {
 }
 
 
+# Spanish hotel vocabulary -> the English words the documents use (keys without accents). The documents stay
+# English; the answer is written in the guest's language. Built from the documents' section titles before the
+# Project 4 held-out Spanish cases were run, so it covers topics, not test questions (decision 51). Spanish words
+# only: none of these keys is an English word a staff member would type.
+SPANISH = {
+    "estacionamiento": "parking",
+    "aparcamiento": "parking",
+    "parqueo": "parking",
+    "coche": "parking",
+    "carro": "parking",
+    "cargador": "ev charging",
+    "electrico": "ev charging",
+    "mascota": "pet pets",
+    "mascotas": "pet pets",
+    "perro": "dog pet",
+    "perros": "dogs pet",
+    "gato": "cat pet",
+    "gatos": "cats pet",
+    "animales": "pets",
+    "lazarillo": "service animal",
+    "piscina": "pool",
+    "alberca": "pool",
+    "playa": "beach",
+    "toalla": "towel",
+    "toallas": "towels",
+    "desayuno": "breakfast",
+    "almuerzo": "dining restaurant",
+    "cena": "dining restaurant",
+    "comida": "dining restaurant",
+    "restaurante": "restaurant",
+    "servicio": "service",
+    "salida": "checkout",
+    "entrada": "checkin",
+    "llegada": "checkin arrival",
+    "temprano": "early checkin",
+    "tarde": "late checkout",
+    "cancelar": "cancellation",
+    "cancelacion": "cancellation",
+    "reembolso": "refund",
+    "devolucion": "refund",
+    "reserva": "booking reservation",
+    "tarifa": "rate fee",
+    "cuota": "fee",
+    "precio": "fee price",
+    "cuesta": "fee cost",
+    "incluye": "includes",
+    "traslado": "airport transfer shuttle",
+    "aeropuerto": "airport transfer",
+    "transporte": "shuttle transfer",
+    "contrasena": "wifi password",
+    "gimnasio": "fitness",
+    "masaje": "spa treatment",
+    "tratamiento": "spa treatment",
+    "ruido": "quiet noise",
+    "silencio": "quiet hours",
+    "fumar": "smoking",
+    "fuma": "smoking",
+    "lavanderia": "laundry",
+    "ropa": "laundry",
+    "equipaje": "luggage",
+    "maleta": "luggage",
+    "maletas": "luggage",
+    "perdido": "lost found",
+    "perdidos": "lost found",
+    "olvide": "lost found",
+    "olvido": "lost found",
+    "cuna": "crib",
+    "cama": "rollaway bed",
+    "almohada": "pillow",
+    "almohadas": "pillows",
+    "limpieza": "housekeeping daily service",
+    "habitacion": "room",
+    "despertador": "wake-up call",
+    "accesible": "accessible accessibility",
+    "silla": "wheelchair accessible",
+    "ruedas": "wheelchair",
+    "puntos": "points loyalty",
+    "lealtad": "loyalty",
+    "miembro": "member loyalty",
+    "socio": "member loyalty",
+    "senderismo": "hiking trail",
+    "caminata": "hiking trail",
+    "boda": "wedding event",
+    "evento": "event",
+    "descuento": "discount",
+    "propina": "gratuity",
+    "deposito": "deposit",
+}
+
+
+def fold_accents(text: str) -> str:
+    """Lowercase without accents ('Habitación' -> 'habitacion'), so Spanish words match the table above."""
+    return "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
+
+
 def expand_query(text: str) -> str:
-    """The question plus the document-side words for any synonyms it uses."""
-    extra = [SYNONYMS[w] for w in re.findall(r"[a-z]+", text.lower()) if w in SYNONYMS]
+    """The question plus the document-side words for any synonyms (or Spanish words) it uses."""
+    words = re.findall(r"[a-z]+", fold_accents(text))
+    extra = [SYNONYMS[w] for w in words if w in SYNONYMS] + [SPANISH[w] for w in words if w in SPANISH]
     return f"{text} {' '.join(extra)}" if extra else text
 
 

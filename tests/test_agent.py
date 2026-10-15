@@ -51,7 +51,7 @@ def test_the_sender_comes_from_the_header_not_the_email_text(store):
         email=email,
         store=store,
     )
-    assert result.bookings == [] and "details withheld" in result.steps[2].summary
+    assert result.bookings == [] and any("details withheld" in s.summary for s in result.steps)
 
 
 def test_step_limit_falls_back_to_a_safe_holding_reply(store, monkeypatch):
@@ -99,7 +99,8 @@ def test_a_failing_tool_is_reported_and_the_agent_carries_on(store, monkeypatch)
     result, client = run(
         [[tool("find_booking", {})], [draft("Thank you, the team will confirm your booking.")]], store=store
     )
-    assert result.outcome == "drafted" and not result.steps[2].ok
+    lookups = [s for s in result.steps if s.name == "find_booking"]
+    assert result.outcome == "drafted" and len(lookups) == 2 and not any(s.ok for s in lookups)
     assert client.requests[1]["messages"][2]["content"][0]["is_error"] is True
 
 

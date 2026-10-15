@@ -1,4 +1,4 @@
-# Copied from Project 1 (hotel-ops-assistant 1.5.0, commit 1e7ae1e), src/ingest.py.
+# Copied from Project 1 (hotel-ops-assistant 1.5.0, commit 7b711aa), src/ingest.py.
 # Do not edit here: change it in Project 1, then run `python scripts/sync_policy.py --ref <commit>`.
 # Only the import lines are rewritten (src.config -> src.policy.config, src.ingest -> src.policy.ingest).
 """Load messy hotel documents, split them into chunks, and build the search index.

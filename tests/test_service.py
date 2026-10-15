@@ -90,7 +90,9 @@ def test_a_full_record_is_logged_for_a_drafted_email(db):
         assert key in logged, key
     assert logged["email_id"] == "E01" and logged["first"] is True and logged["model"] == "claude-haiku-5-5"
     tools = [s for s in logged["steps"] if s["kind"] == "tool"]
-    assert [s["tool"] for s in tools] == ["find_booking", "search_policy"] and tools[1]["args"] == {"question": "dog"}
+    # The first lookup runs before the model (Project 4), the second is the model's own call.
+    assert [s["tool"] for s in tools] == ["find_booking", "find_booking", "search_policy"]
+    assert tools[2]["args"] == {"question": "dog"}
     assert logged["cost_usd"] == pytest.approx((2000 * 0.10 + 200 * 0.50) / 1e6)
     assert logged["citations"][0]["id"] == "P1"
 

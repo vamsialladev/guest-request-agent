@@ -86,6 +86,9 @@ class ToolContext:
     actions: list[Action] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)  # every tool result as text, for the grounding check
     steps: list[Step] = field(default_factory=list)
+    # Project 4: the property of the sender's booking when it differs from the inbox (looked up before the
+    # model runs). search_policy defaults to it, so a wrong-inbox email gets the right hotel's policy.
+    pinned_property: str | None = None
 
     def add_step(self, kind: str, name: str, summary: str, ok: bool = True, args=None, result=None, ms=None) -> Step:
         step = Step(
@@ -232,7 +235,7 @@ def passage_title(chunk: dict) -> str:
 
 
 def search_policy(ctx: ToolContext, args: SearchPolicyInput) -> tuple[dict, str]:
-    prop = args.property or ctx.property
+    prop = args.property or ctx.pinned_property or ctx.property
     chunks = policy_search.search(args.question, prop, k=POLICY_TOP_K)
     results = []
     for chunk in chunks:
