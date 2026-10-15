@@ -7,3 +7,4 @@ pypdf~=6.19
 numpy~=2.5
 python-dotenv~=1.2
 streamlit~=1.65.0
+psycopg[binary]~=3.3  # Postgres request log (Project 4); imported only when DATABASE_URL is postgres

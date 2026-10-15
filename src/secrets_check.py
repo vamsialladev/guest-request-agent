@@ -8,6 +8,7 @@ import logging
 import os
 
 REQUIRED = ("ANTHROPIC_API_KEY", "ADMIN_PASSWORD")
+OPTIONAL = ("DATABASE_URL", "STAFF_PASSWORD")  # Project 4: persistent logs and staff sign-in ("not configured")
 PLACEHOLDER_PREFIXES = ("your-", "change-me", "replace-me")  # copied from an example file, never filled in
 
 log = logging.getLogger("guest_agent.config")
@@ -18,12 +19,13 @@ def is_set(value: str | None) -> bool:
     return bool(value) and not value.lower().startswith(PLACEHOLDER_PREFIXES)
 
 
-def secret_status(env=None, names=REQUIRED) -> dict[str, str]:
+def secret_status(env=None, names=REQUIRED + OPTIONAL) -> dict[str, str]:
     env = os.environ if env is None else env
     return {name: "set" if is_set(env.get(name)) else "missing" for name in names}
 
 
-SECRET_NAME_PARTS = ("KEY", "SECRET", "PASSWORD", "TOKEN")
+# DATABASE_URL carries the database password inside it, so its value is masked like any other secret.
+SECRET_NAME_PARTS = ("KEY", "SECRET", "PASSWORD", "TOKEN", "DATABASE_URL")
 MIN_SECRET_CHARS = 8  # shorter values would mask ordinary words
 
 
@@ -73,6 +75,14 @@ CLOUD_SETTINGS = {
     "ALERT_ERROR_RATE": "0.2",
     "ALERT_MIN_EVENTS": "5",
     "ALERT_DAILY_COST_USD": "1.00",
+    # Project 4, all optional: blank or absent = the app runs exactly as before (files, Demo mode only).
+    "DATABASE_URL": "",
+    "STAFF_PASSWORD": "",
+    "RETENTION_DAYS": "30",
+    "STAFF_IDLE_MINUTES": "30",
+    "BUDGET_P95_S": "12.0",
+    "BUDGET_COST_PER_1000": "2.00",
+    "KILL_SWITCH": "false",
 }
 FORCED: dict[str, str] = {}  # Project 1 forced keyword-only search here; Project 2 is always keyword-only
 

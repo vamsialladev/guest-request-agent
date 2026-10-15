@@ -10,7 +10,12 @@ FAKE = {"ANTHROPIC_API_KEY": "sk-ant-fake-for-tests", "ADMIN_PASSWORD": "fake-ad
 def test_status_is_only_set_or_missing():
     status = secret_status(FAKE)
     # Only secrets: prices are configuration with documented defaults, not secrets.
-    assert status == {"ANTHROPIC_API_KEY": "set", "ADMIN_PASSWORD": "set"}
+    assert status == {
+        "ANTHROPIC_API_KEY": "set",
+        "ADMIN_PASSWORD": "set",
+        "DATABASE_URL": "missing",  # Project 4, optional
+        "STAFF_PASSWORD": "missing",
+    }
     assert "sk-ant-fake-for-tests" not in str(status) and "fake-admin-pass" not in str(status)
 
 
@@ -73,3 +78,15 @@ def test_secrets_file_uses_env_values_then_defaults(tmp_path):
     settings = build_secrets(dotenv_values(env_file))
     assert settings["MAX_EMAILS_PER_DAY"] == "120" and settings["MAX_AGENT_STEPS"] == "6"
     assert settings["ANTHROPIC_API_KEY"] == "" and settings["LLM_MODEL"] == "claude-haiku-5-5"
+
+
+def test_optional_project4_settings_report_set_or_missing_and_the_database_url_is_masked():
+    from src.secrets_check import secret_values
+    from src.usage import redact
+
+    env = {**FAKE, "DATABASE_URL": "postgresql://owner:s3cret-pass@ep-x.neon.tech/neondb?sslmode=require"}
+    status = secret_status(env)
+    assert status["DATABASE_URL"] == "set" and status["STAFF_PASSWORD"] == "missing"
+    assert "s3cret-pass" not in str(status)
+    masked = redact({"error": "could not connect: " + env["DATABASE_URL"]}, secret_values(env))
+    assert "s3cret-pass" not in str(masked) and "neon.tech" not in str(masked)

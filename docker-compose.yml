@@ -1,0 +1,38 @@
+# The app plus its own Postgres, locally, with one command (Project 4):
+#
+#   docker compose up --build        -> http://localhost:8501   (Ctrl+C to stop; `docker compose down` to remove)
+#
+# The request log goes to the Postgres container (volume `pgdata`, kept between runs). Your .env is read for
+# ANTHROPIC_API_KEY, ADMIN_PASSWORD and STAFF_PASSWORD; DATABASE_URL here always points at the local container, so a
+# Neon URL in .env is never used by this stack. Not deployed anywhere: the live demo runs on Streamlit Community Cloud.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: hotel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-only-change-me}
+      POSTGRES_DB: hotel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotel -d hotel"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://hotel:${POSTGRES_PASSWORD:-local-only-change-me}@db:5432/hotel
+    ports:
+      - "8501:8501"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
