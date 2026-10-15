@@ -2,7 +2,7 @@
 -r requirements.txt
 pytest~=9.1
 pytest-cov~=7.1
-ruff==0.16.10
+ruff==0.17.0
 pip-audit~=2.10
 pillow~=12.3
 playwright~=1.63  # scripts/capture_screenshots.py and record_demo.py only
