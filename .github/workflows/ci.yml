@@ -22,7 +22,7 @@ jobs:
     env:
       TEST_DATABASE_URL: postgresql://ci:ci-only@localhost:5432/ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -48,7 +48,7 @@ jobs:
     name: "Eval harness gates (hoteleval v1.0.0, recorded mode, no API)"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -61,7 +61,7 @@ jobs:
     name: "Release run v1.1.0 gated with latency and cost budgets (hoteleval v1.2.0, saved live run, no API)"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
