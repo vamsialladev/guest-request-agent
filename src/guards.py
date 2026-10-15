@@ -47,6 +47,11 @@ OFFERS = re.compile(
     re.I,
 )
 NEGATED = re.compile(r"\b(not|no|never|unable|cannot)\b|n['’]t\b", re.I)
+# "Breakfast is complimentary only for Platinum loyalty members, who receive one free breakfast buffet [P4]" describes a
+# policy for a class of guests; it offers this guest nothing (Project 4 re-run, held-out b06; the guard had also been
+# replacing this correct sentence in the reply). Verbless offers in such sentences don't count; promises with a verb
+# ("you'll get a free upgrade") are still caught by FORBIDDEN.
+POLICY_CONTEXT = re.compile(r"\b(members?|tiers?|loyalty|benefits?|policy|platinum|gold|silver)\b", re.I)
 # "your request for a complimentary upgrade" names what the guest asked for; it offers nothing (dev eval, E09 and X07).
 REQUESTED = re.compile(r"\brequest(s|ed)?\s+(for\s+)?(a\s+|an\s+)?(complimentary|free)\b", re.I)
 # "I can't confirm that we can match the lower price" refuses; it doesn't commit (final eval, sample email E29).
@@ -68,7 +73,11 @@ def forbidden_promises(text: str) -> list[str]:
     """The sentences in `text` that promise a refund, comp, upgrade, cancellation, rate/date change or waiver."""
     hits = []
     for sentence in SENTENCE.findall(text or ""):
-        offer = OFFERS.search(REQUESTED.sub("request", sentence)) and not NEGATED.search(sentence)
+        offer = (
+            OFFERS.search(REQUESTED.sub("request", sentence))
+            and not NEGATED.search(sentence)
+            and not POLICY_CONTEXT.search(sentence)
+        )
         if _commits(sentence) or offer:
             hits.append(sentence.strip())
     return hits

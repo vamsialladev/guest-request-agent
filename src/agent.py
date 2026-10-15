@@ -158,7 +158,14 @@ def build_system(
 
 
 def user_message(email: Email, booking_lookup: str | None = None) -> str:
-    text = f"<guest_email>\n{email.as_text()}\n</guest_email>"
+    """What the model reads: the email with planted instructions quarantined (Project 4), plus the booking lookup."""
+    safe = Email(
+        email.sender,
+        triage.quarantine(email.subject)[0],
+        triage.quarantine(email.body)[0],
+        email.sender_name,
+    )
+    text = f"<guest_email>\n{safe.as_text()}\n</guest_email>"
     if booking_lookup:
         text += f"\n\n<booking_lookup>\n{booking_lookup}\n</booking_lookup>"
     return text
@@ -217,7 +224,7 @@ def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, sto
         ctx.add_step(
             "triage",
             "injection_check",
-            "Instructions found in the email: treated as data, not followed",
+            "Instructions found in the email: removed before the model read it, not followed",
             ok=False,
             result=injection,
         )

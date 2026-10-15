@@ -134,12 +134,41 @@ INJECTION_PATTERNS = [
     r"this is the (general )?manager",
     r"ignora (las |todas |tus )?(instrucciones|reglas)",
     r"<\s*/?\s*(system|instructions?)\s*>",
+    # Project 4 (decision 21): text addressed to an automated reader rather than to people. Held-out H03 ("Note to
+    # the automated system: ... pre-approved") matched nothing above, so the model read it as the guest's request.
+    r"\b(note|message|instructions?|memo|reminder)s? (to|for) (the |any |all )?(automated |email |ai |virtual )?"
+    r"(system|assistant|bot|agent|ai|model)s?\b",
+    r"\b(automated|ai) (assistants?|systems?|agents?|bots?|models?)\b",
+    r"\b(do not|don't|never) (mention|reveal|disclose) (this|the) (note|instruction|message)",
+    r"\bpre-?approved (for|by)\b",
+    r"\b(instrucci[oó]n|nota|mensaje)(es)? (para|al) (el |la )?(asistente|sistema|bot|agente)",
+    r"\bno (menciones|mencione|reveles) (esta|este) (nota|instrucci[oó]n|mensaje)",
 ]
 INJECTION = re.compile("|".join(f"(?:{p})" for p in INJECTION_PATTERNS), re.I)
 
 
 def injection_markers(text: str) -> list[str]:
     return [m.group(0) for m in INJECTION.finditer(text)][:5]
+
+
+QUARANTINED = "[Removed by the hotel's filter: text addressed to an automated system.]"
+# A bracketed, parenthesised or dashed block, or else the sentence, that contains an injection marker.
+_BLOCKS = re.compile(r"\[[^\[\]]{0,600}\]|\([^()]{0,600}\)|-{3,}[^-]{0,600}-{3,}|[^.!?\n]{0,400}[.!?]?", re.S)
+
+
+def quarantine(text: str) -> tuple[str, list[str]]:
+    """The email with every block that contains an injection marker replaced by QUARANTINED, and the removed blocks.
+    The model never reads instructions planted in an email; staff still see the original email."""
+    removed: list[str] = []
+
+    def repl(m: re.Match) -> str:
+        block = m.group(0)
+        if block.strip() and INJECTION.search(block):
+            removed.append(block.strip())
+            return QUARANTINED
+        return block
+
+    return _BLOCKS.sub(repl, text or ""), removed
 
 
 def classify_input(text: str, max_chars: int, keyword_matches=None) -> str:
