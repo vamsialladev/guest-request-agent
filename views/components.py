@@ -178,6 +178,23 @@ def staff_panel(recent_items):
                 st.success("Reported. The owner sees it on the Operations page.", icon=":material/check:")
 
 
+def privacy_storage_line(thing: str, max_entries: int) -> str:
+    """Where the log lives, worded for visitors (Project 4): true for both storage modes."""
+    from src import store
+    from src.config import RETENTION_DAYS
+
+    if store.enabled():
+        return (
+            f"{thing} are stored in a private database, readable only by the app owner. Emails, phone numbers, "
+            "card-like numbers and names are removed, and booking numbers replaced with codes, before anything is "
+            f"stored. Records are deleted after {RETENTION_DAYS} days."
+        )
+    return (
+        f"{thing} are stored on the app server, readable only by the app owner, and kept only until the app "
+        f"restarts (at most the most recent {max_entries:,} entries)."
+    )
+
+
 def inject_css():
     st.html(f"<style>{(HERE / 'style.css').read_text(encoding='utf-8')}</style>")
 

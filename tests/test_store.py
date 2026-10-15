@@ -200,3 +200,13 @@ def test_whole_personal_fields_are_replaced_and_ids_are_kept():
         "request_id": "r-9",
         "property": "x",
     }
+
+
+def test_privacy_page_wording_matches_where_logs_live(monkeypatch, tmp_path):
+    from views.components import privacy_storage_line
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    assert "until the app restarts" in privacy_storage_line("The logs", 5000)
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'x.db').as_posix()}")
+    line = privacy_storage_line("The logs", 5000)
+    assert "deleted after 30 days" in line and "names are removed" in line and "restarts" not in line

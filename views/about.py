@@ -24,8 +24,8 @@ results shown in the step timeline. Staff review every draft before it goes anyw
 **What is logged and for how long.**
 - Each processed email is logged for quality: the email text, every agent step (tool, input and a summary of the
   result), the draft, your decision and the final text, timing, token counts and estimated cost.
-- The log is stored on the app server, readable only by the app owner, and kept only until the app restarts
-  (at most the most recent {LOG_MAX_ENTRIES:,} entries). API keys and passwords are masked before anything is written.
+- {ui.privacy_storage_line("The logs", LOG_MAX_ENTRIES)} API keys and passwords are masked before anything is
+  written.
 - No names or accounts are collected. Each browser session gets an anonymous random ID.
 - Email text and tool results are sent to Anthropic's API to draft replies.
 - No cookies for tracking, no advertising, nothing sold or shared.
