@@ -1,0 +1,17 @@
+{
+ "run_id": "p2-v1.1.0-2026-10-15",
+ "project": "guest-request-agent",
+ "label": "Project 2 v1.1.0 (Project 4)",
+ "date": "2026-10-15",
+ "mode": "live",
+ "kind": "candidate",
+ "model": "claude-haiku-5-5",
+ "settings": {
+  "effort": "low"
+ },
+ "price_in": 0.1,
+ "price_out": 0.5,
+ "description": "All 71 cases at Project 2 v1.1.0: booking lookup before the model, reply language guard, planted instructions quarantined, policy statements not counted as promises",
+ "ref": "78ed4c6f977af12933650dcc4874afd836501589",
+ "source": "live run of guest-request-agent @ 78ed4c6"
+}

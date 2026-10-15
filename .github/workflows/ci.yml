@@ -56,3 +56,16 @@ jobs:
         run: pip install "hoteleval @ git+https://github.com/vamsialladev/eval-harness@v1.0.0"
       - name: "Gate the recorded final and held-out runs against the harness baseline (no API)"
         run: hoteleval gate --project guest-request-agent --recorded eval/recorded/main-final.jsonl eval/recorded/heldout-final.jsonl
+
+  release-gate:
+    name: "Release run v1.1.0 gated with latency and cost budgets (hoteleval v1.2.0, saved live run, no API)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the eval harness at its release tag (standard library only)
+        run: pip install "hoteleval @ git+https://github.com/vamsialladev/eval-harness@v1.2.0"
+      - name: "Gate the saved live run of this release: hard gates, floors, stable flips, p95 and cost budgets"
+        run: hoteleval gate --run-file eval/harness/p2-v1.1.0-2026-10-15.jsonl
