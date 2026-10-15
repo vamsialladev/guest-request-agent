@@ -111,7 +111,7 @@ def run(item: dict, reuse: bool):
             session_id=ui.session_id(),
             first=ui.is_first(),
             email_id=item["id"],
-            session_count=ui.emails_sent_to_agent(),
+            session_count=0 if ui.is_staff() else ui.emails_sent_to_agent(),  # staff: no per-session cap
             daily_counter=ui.daily_counter(),
         )
     if result.api_calls:

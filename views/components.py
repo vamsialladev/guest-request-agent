@@ -104,6 +104,80 @@ def asset(path: str) -> str:
     return str(ROOT / path)
 
 
+# ---------- Project 4: Demo mode / Staff sign-in, storage note ----------
+def _staff_gate():
+    from src.roles import GateState
+
+    return st.session_state.setdefault("staff_gate", GateState())
+
+
+def is_staff() -> bool:
+    from src.config import STAFF_IDLE_MINUTES, staff_password
+    from src.roles import STAFF, role
+
+    if not staff_password():
+        return False
+    return role(_staff_gate(), time.time(), STAFF_IDLE_MINUTES * 60) == STAFF
+
+
+def log_storage_note() -> str:
+    """Honest wording for where the logs live (no connection details)."""
+    from src import store
+
+    s = store.status()
+    if s["backend"] in ("postgres", "sqlite") and s["ok"]:
+        return f"Stored in the database ({s['backend']}), kept for {s['retention_days']} days, personal data redacted."
+    if s["configured"]:
+        return "Database configured but not reachable: logging to a temporary file (resets when the app restarts)."
+    return "Logs reset when the app restarts. Download a copy to keep it."
+
+
+def staff_panel(recent_items):
+    """Sidebar: the Demo mode label, and Staff sign-in when STAFF_PASSWORD is set. `recent_items()` returns this
+    session's (drafts) as (request_id, text) pairs for the report form."""
+    from src.config import STAFF_IDLE_MINUTES, staff_password
+    from src.roles import DEMO_LABEL as MODE_LABEL
+    from src.roles import REPORT_REASONS, report_record, sign_out, staff_attempt
+    from src.usage import append_jsonl, now_iso
+
+    with st.sidebar:
+        if not is_staff():
+            st.caption(MODE_LABEL)
+            if not staff_password():
+                return
+            with st.expander("Staff sign-in", icon=":material/badge:"):
+                with st.form("staff_login", clear_on_submit=True):
+                    given = st.text_input("Staff password", type="password", autocomplete="current-password")
+                    submitted = st.form_submit_button("Sign in", icon=":material/login:")
+                if submitted:
+                    ok, message = staff_attempt(_staff_gate(), given, staff_password(), now=time.time())
+                    if ok:
+                        st.rerun()
+                    time.sleep(1.0)
+                    st.error(message, icon=":material/lock:")
+                st.caption("Staff can report a draft for review. Visitors use the open Demo mode.")
+            return
+        st.caption(f"Signed in as staff · signs out after {STAFF_IDLE_MINUTES} idle minutes")
+        if st.button("Sign out of staff", icon=":material/logout:", key="staff_sign_out"):
+            sign_out(_staff_gate())
+            st.rerun()
+        items = recent_items()
+        with st.expander("Report a draft for review", icon=":material/flag:"):
+            if not items:
+                st.caption("Nothing to report yet in this session.")
+                return
+            with st.form("staff_report", clear_on_submit=True):
+                labels = [f"{text[:60]}" for _, text in items]
+                picked = st.selectbox("Which draft", range(len(items)), format_func=lambda i: labels[i])
+                reason = st.selectbox("Reason", REPORT_REASONS)
+                note = st.text_area("Note (optional)", max_chars=500)
+                sent = st.form_submit_button("Send report", icon=":material/flag:")
+            if sent:
+                rid, text = items[picked]
+                append_jsonl(LOG_DIR / "reports.jsonl", report_record(rid, text, reason, note, now_iso()))
+                st.success("Reported. The owner sees it on the Operations page.", icon=":material/check:")
+
+
 def inject_css():
     st.html(f"<style>{(HERE / 'style.css').read_text(encoding='utf-8')}</style>")
 
@@ -172,6 +246,12 @@ def fmt_seconds(value) -> str:
 
 
 # ---------- Session state ----------
+def recent_drafts() -> list[tuple[str, str]]:
+    """This session's drafts (request_id, subject), newest first, for the staff report form."""
+    reviews = list(desk().reviews.values())
+    return [(r.request_id, f"{r.subject} -> {r.to}") for r in reversed(reviews)][:10]
+
+
 def session_id() -> str:
     if "session_id" not in st.session_state:
         st.session_state.session_id = uuid.uuid4().hex[:12]

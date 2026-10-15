@@ -167,10 +167,7 @@ st.caption(
 # ---------- Usage ----------
 st.subheader("Usage")
 since = log_since(records)
-st.caption(
-    f"Log since {since + ' UTC' if since else 'no entries yet'} · Logs reset when the app restarts. Download a "
-    "copy to keep it."
-)
+st.caption(f"Log since {since + ' UTC' if since else 'no entries yet'} · {ui.log_storage_note()}")
 api_records = [r for r in records if r.get("api_calls")]
 costs = [r["cost_usd"] for r in records if r.get("cost_usd")]
 ui.tiles(
