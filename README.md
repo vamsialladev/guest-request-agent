@@ -401,6 +401,8 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 ## Security and privacy
 
+**Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
+
 Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
 propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
 kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
