@@ -4,6 +4,6 @@ pytest~=9.1
 pytest-cov~=7.1
 ruff==0.16.10
 pip-audit~=2.10
-pillow~=12.3
+pillow~=13.0
 playwright~=1.63  # scripts/capture_screenshots.py and record_demo.py only
 piper-tts~=1.8  # scripts/record_demo.py narration only (offline text-to-speech)
