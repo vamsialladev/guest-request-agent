@@ -1,0 +1,2 @@
+# generic-api-key matched across two lines: "STAFF_PASSWORD=" (blank) and the next setting. No secret.
+b8c9630346e5bf342bc3bdbda241543a479f5cda:.env.example:generic-api-key:42
