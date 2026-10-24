@@ -1,7 +1,8 @@
 # Demo Script (about 2 minutes)
 
-Recorded from the **live app** by `python scripts/record_demo.py` (Playwright + Piper TTS `en_US-lessac-high`,
-labelled "Narration: AI voice"). The words below are the narration, word for word; the captions are shorter.
+Recorded from the **live app** by `python scripts/record_demo.py` (Playwright, burned-in captions, no voice; see
+decision 24). The "Narration" column is what the screen recording shows step by step; the video I record in my own
+voice follows `docs/VIDEO_SCRIPT.md`.
 Real agent runs, nothing staged. The Admin segment is recorded from a local run of the same code with a throwaway
 test password and its own empty log (the live Admin password is never typed by a script), and is captioned so.
 

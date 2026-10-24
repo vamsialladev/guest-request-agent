@@ -6,5 +6,6 @@ rank-bm25==0.2.2
 pypdf~=6.19
 numpy~=2.5
 python-dotenv~=1.2
-streamlit~=1.65.0
+streamlit~=1.66.1
+pillow~=13.0  # security floor: pip-audit found 37 CVEs fixed in Pillow 13.0.0 (streamlit installs Pillow)
 psycopg[binary]~=3.3  # Postgres request log (Project 4); imported only when DATABASE_URL is postgres

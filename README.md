@@ -4,24 +4,25 @@
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
 ![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
-![Coverage 98%](https://img.shields.io/badge/coverage-98%25-brightgreen)
+![Coverage 97%](https://img.shields.io/badge/coverage-97%25-brightgreen)
 [![Live demo](https://img.shields.io/badge/live%20demo-streamlit-FF4B4B)](https://guest-request-agent.streamlit.app)
 
 **An AI agent that reads a guest email, finds every request, checks the booking, availability and hotel policy, and
 drafts a cited reply with proposed staff tasks. A person approves, edits or rejects. Nothing is sent without approval,
 and in this demo nothing is ever sent at all.**
 
-> **Project 2 of 5** in my portfolio: one *simulated client engagement* for a fictional hotel group with two
-> properties, a beach resort and a mountain lodge. Guests, bookings and emails are synthetic (`@example.com`);
-> the hotel policies are Project 1's synthetic documents. Business value is a projection from stated assumptions.
+> **Stage 2 of a simulated client engagement** for a fictional hotel group with two properties, a beach resort and a
+> mountain lodge. Guests, bookings and emails are synthetic (`@example.com`); the hotel policies are stage 1's
+> synthetic documents. Business value is a projection from stated assumptions. Discovery and scoping (stage 0):
+> [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
-🔗 **[Live demo](https://guest-request-agent.streamlit.app)** (no sign-in) · 🎥 **[2-minute demo video](https://vamsialla.com/videos/guest-request-agent-demo.mp4)** (narrated, captioned) · 📄 **[Case study](https://vamsialla.com/projects/guest-request-agent.html)** · 💰 **[Business case](docs/BUSINESS_CASE.md)** · 🏗️ **[Architecture](docs/ARCHITECTURE.md)** · 🧭 **[Decisions](docs/DECISIONS.md)**
-<sub>Free hosting: if the app is asleep, click ‘wake up’ and give it about 30 seconds.</sub>
-
-## See it in action
+<!-- DEMO-VIDEO -->
 
 <p align="center"><img src="docs/images/demo.gif" alt="On the live app, the agent works through Elena's three-request email: booking found, three hotel policies searched and cited, two staff tasks proposed, checks passed, then the cited draft" width="760"></p>
-<p align="center"><strong><a href="https://vamsialla.com/projects/guest-request-agent.html#demo">▶ Watch the 2-minute demo (with narration)</a></strong> · <strong><a href="https://guest-request-agent.streamlit.app">Try the live app</a></strong> (no sign-in, nothing is ever sent)</p>
+
+**▶ Try it live: [guest-request-agent.streamlit.app](https://guest-request-agent.streamlit.app)** (no sign-in, nothing is ever sent). Free hosting: may take ~30 s to wake.
+
+📄 **[Case study](https://vamsialla.com/projects/guest-request-agent.html)** · 💰 **[Business case](docs/BUSINESS_CASE.md)** · 🏗️ **[Architecture](docs/ARCHITECTURE.md)** · 🧭 **[Decisions](docs/DECISIONS.md)**
 
 ---
 
@@ -31,8 +32,9 @@ and in this demo nothing is ever sent at all.**
 |---|---|
 | **Problem** | Guest emails mix several requests, need the booking, availability and the right hotel's policy, and sometimes need a manager today. Under pressure, staff promise refunds or upgrades only a manager can approve. |
 | **Solution** | An agent with six typed tools drafts a cited reply, lists every request, proposes tasks for the right team and routes refunds, comps, upgrades and changes to a manager. Staff approve, edit or reject. |
+| **Quality (measured)** | **v1.0.0:** 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**. 237 tests, 98% coverage. **v1.1.0 (stage 4, production):** correct tool use 100%, citations 100%, the wrong-hotel case fixed (0/6 → 6/6), p95 8.3 s, 276 tests, 97% coverage. |
+| **Cost (measured)** | **$1.24 per 1,000 emails** in v1.1.0 ($1.30 in v1.0.0), Claude Haiku 5.5, 3 runs |
 | **Projected value** | ~$37K/yr net for 2 properties (range $10K–$82K); ~$1.9M/yr at 100 properties ([assumptions](docs/BUSINESS_CASE.md)) |
-| **Quality (measured)** | **v1.0.0:** 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**, **$1.30 per 1,000 emails**. 237 tests, 98% coverage. **v1.1.0 (Project 4):** correct tool use 100%, citations 100%, the wrong-hotel case fixed (0/6 → 6/6), $1.24 per 1,000, 276 tests, 97% coverage. |
 
 ## Where to start
 
@@ -90,6 +92,8 @@ refund. The first needs a careful reply; the next two need a manager now; the la
 | Pessimistic | $10,376 | $530,548 |
 | **Base** (30 emails/day, 4 minutes saved each, 0.5 unapproved comps avoided per week) | **$37,052** | **$1,864,336** |
 | Optimistic | $82,387 | $4,131,125 |
+
+**Who benefits:** reservations and front-desk staff (a checked draft instead of writing from scratch), managers (money and guest-impact requests always reach them), guests (a same-day, correct reply). **How a pilot would measure it:** minutes per email by timing staff before and after, edits per approved draft, unapproved comps in the refund log against the 3 months before.
 
 A projection, not a measured saving. Only the AI cost ($1.30 per 1,000 emails) is measured. The result moves almost
 one-for-one with minutes saved per email, so that's what a pilot measures first ([pilot plan and KPIs](docs/BUSINESS_CASE.md)).
@@ -261,6 +265,18 @@ Also in v1.1.0: a persistent request and decision log (Neon Postgres, SQLite or 
 - **The rules missed both held-out escalations; the model caught them.** A burn at a walk-in clinic and a guard who grabbed a guest's arm contain none of the rule words. Rules OR model is the design that held.
 - **A retrieval setting travels with its tests:** cutting Project 1's search from 5 passages to 3 lost "Is there a resort fee?".
 
+## Design at scale
+
+What exists today is marked **Built**; anything else is **Roadmap**.
+
+| Topic | Design |
+|---|---|
+| **Model choice and why** | **Built:** Claude Haiku 5.5 with effort "low" ([decision 11](docs/DECISIONS.md)): the task is mostly lookup and drafting, the same model as stage 1, and the hard gates (escalation, injection, no promises) pass at 100% with it. A manual tool-use loop caps it at 6 model turns. **Roadmap:** compare a larger model on the one held-out key-facts miss (H03) before paying for it. |
+| **PII and tenant isolation** | **Built:** `find_booking` only returns the sender's own bookings, and the sender's booking is looked up before the model runs and pins the hotel ([decision 18](docs/DECISIONS.md)). The model sees the email (planted instructions quarantined first) and only the booking fields the reply uses. The request log is redacted before any write (`src/pii.py`) and kept 30 days. One deployment serves one hotel group. **Roadmap:** a `hotel_group_id` on every booking, passage and log record for a multi-group deployment, enforced in the tool layer (the stage 7 tool server does this). |
+| **10K → 1M users** | **What breaks first:** one agent run takes about 4–8 s and several model turns, so a busy inbox queues up behind a single app process; the synthetic bookings live in a file. **Built:** results for sample emails are reused, per-session caps, the persistent Postgres log, budgets in CI. **Roadmap:** read bookings from the client's system through a read-only API; drafting as a background job from a queue (an inbox webhook adds the email, staff see drafts as they finish); several workers; per-property daily budgets; prompt caching for the system prompt and tool definitions. |
+| **Monitoring, alerting, hallucination and off-brand detection** | **Built:** every date, price, time and room number in a draft must come from a tool result (fact grounding); no-promise and escalation checks run on every draft; the Operations page shows errors, p50/p95, cost per day, escalations, fallbacks and budget status; a daily health check opens a GitHub issue when the app is down ([hotel-ai-handoff](https://github.com/vamsialladev/hotel-ai-handoff)); eval gates with p95 and cost budgets run in CI. **Roadmap:** off-brand tone detection with an LLM judge once it agrees with human labels (the stage 3 judge doesn't yet). |
+| **Failure modes and rollback** | **Built:** 30 s timeout + 1 retry, then a deterministic fallback reply and a staff task; `KILL_SWITCH` stops all model calls and sends every email the safe holding reply; staff approval is the only path out, so a bad draft never reaches a guest. Rollback: revert the commit on `main` (Streamlit Cloud redeploys) or run the previous release tag. |
+
 ## Skills demonstrated
 
 | Forward-deployed skill | Where it shows |
@@ -367,7 +383,7 @@ The synthetic bookings and the policy index are built automatically on first sta
 | `make business` | Projected value, three scenarios |
 | `make secrets` | Build `.streamlit/secrets.toml` from `.env` (prints key names only) |
 | `python scripts/sync_policy.py --check` | Verify the Project 1 copy |
-| `make screenshots` / `make video` | README screenshots / narrated demo video |
+| `make screenshots` / `make video` | README screenshots / captioned screen recording (no voice; I record my own) |
 
 ## Troubleshooting
 

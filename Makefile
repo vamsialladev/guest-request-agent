@@ -39,7 +39,7 @@ secrets:        ## build .streamlit/secrets.toml from .env (prints key names onl
 business:       ## projected value, three scenarios
 	python scripts/business_case.py --scenarios
 
-video:          ## record the narrated demo video from the live app
+video:          ## record the captioned demo video (no voice) from the live app
 	python scripts/record_demo.py
 
 screenshots:    ## README screenshots (app must be running)

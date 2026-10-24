@@ -1,8 +1,7 @@
-"""Record the narrated, captioned demo video from the LIVE app: real agent runs, nothing staged.
+"""Record the captioned demo video from the LIVE app: real agent runs, nothing staged.
 
 python scripts/record_demo.py                       # record + build docs/video/demo.mp4 and docs/images/demo.gif
 python scripts/record_demo.py --rebuild             # rebuild from the last recording (no new runs)
-python scripts/record_demo.py --no-voice            # captions only, no narration
 python scripts/record_demo.py --web-out ../vamsi-portfolio/videos/guest-request-agent-demo.mp4   # + web copy
 python scripts/record_demo.py --app http://localhost:8501/                                       # rehearse locally
 
@@ -13,12 +12,11 @@ with an empty log folder and a one-time password that is never printed or saved)
 typed by a script, and the caption says so. Runs the agent on about 4 emails on the live app (well under $0.01;
 sample results are reused after the first run) and 2 locally.
 
-Narration: an AI voice from Piper (open source, runs offline, no voice cloning), timed to each step: every step
-waits for its line to finish. Mixed to about -16 LUFS, AAC audio. Also writes docs/video/narration-script.txt and a
-WebVTT captions track, and a burned-in-captions copy for LinkedIn. The voice model (about 110 MB) is downloaded once
-into docs/video/voices/.
+No narration: the video is a silent screen recording with burned-in step captions. I record my own voice
+over it from docs/VIDEO_SCRIPT.md (no AI voice); scripts/make_captions.py then captions my voice.
+Also writes a WebVTT track of the captions and a LinkedIn copy.
 
-Dev-only: needs Playwright, piper-tts (requirements-dev.txt) and ffmpeg on PATH. docs/video/ is git-ignored;
+Dev-only: needs Playwright (requirements-dev.txt) and ffmpeg on PATH. docs/video/ is git-ignored;
 publish the web copy to the portfolio repo instead.
 """
 
@@ -33,7 +31,6 @@ import sys
 import tempfile
 import time
 import urllib.request
-import wave
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -41,8 +38,6 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "video"
 WORK = OUT / "work"
-VOICES = OUT / "voices"
-VOICE = "en_US-lessac-high"
 GIF = ROOT / "docs" / "images" / "demo.gif"
 APP = "https://guest-request-agent.streamlit.app/~/+/"  # the app itself, without Streamlit Cloud's frame
 LOCAL_PORT = 8530  # the local instance used only for the Admin segment
@@ -57,30 +52,10 @@ LINKS = [
 ]
 TITLE = "Guest Request Agent"
 TITLE_SECONDS = 3
-LEAD, GAP = 0.4, 0.35  # narration starts LEAD s into a step; GAP s of silence between lines
-SPEED = 1.08  # Piper length scale: slightly slower than its default, easier to follow
+LEAD, GAP = 0.4, 0.35  # step timing offsets (kept so old timelines rebuild the same)
 GIF_STEP = "steps"  # the GIF is this step: the agent's timeline for the three-request email
 
-# What is said (narration) and shown (caption) at each step. Captions are short for muted viewers.
-NARRATION = {
-    "title": "Guest Request Agent: a simulated client project, part two of five.",
-    "inbox": "A guest writes with three requests: a dog, a late check-out and an airport pickup.",
-    "steps": "The agent finds every request. It looks up her booking, checks the hotel's policies with the search "
-    "from project one, and proposes tasks for the right teams.",
-    "draft": "The draft cites every policy it uses, and every price and date is checked against the tool results "
-    "before staff see it.",
-    "approve": "Staff stay in control. They can edit the reply, then approve it. Nothing is really sent: it goes "
-    "to a simulated outbox.",
-    "outbox": "Only now are the tasks created, for the teams that will do them.",
-    "escalation": "An angry refund demand goes straight to a manager, with the reason and a polite holding reply. "
-    "The agent never promises a refund.",
-    "injection": "This email tries to take over the assistant. It's treated as data: no refund, and no other "
-    "guest's booking.",
-    "how": "It's measured on forty labelled emails, three runs each: every escalation caught, every injection "
-    "resisted, no forbidden promises, at about a dollar thirty per thousand emails.",
-    "admin": "The owner sees every request: each agent step, the draft, and exactly what staff changed before sending.",
-    "end": "Try the live app, or read the code and the decisions. The links are on screen.",
-}
+# What is shown (caption) at each step. Captions are short for muted viewers.
 CAPTIONS = {
     "inbox": "Three requests in one email. The agent finds them all.",
     "steps": "Booking, policy (Project 1's search) and tasks, step by step.",
@@ -94,39 +69,9 @@ CAPTIONS = {
 }
 
 
-# ---------------------------------------------------------------- narration
-def voice_model() -> Path:
-    model = VOICES / f"{VOICE}.onnx"
-    if not model.exists():
-        VOICES.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["python", "-m", "piper.download_voices", VOICE, "--download-dir", str(VOICES)], check=True)
-    return model
-
-
-def wav_seconds(path: Path) -> float:
-    with wave.open(str(path), "rb") as w:
-        return w.getnframes() / w.getframerate()
-
-
-def synthesize(lines: dict, folder: Path) -> dict:
-    """One WAV per line with Piper (offline). Returns {key: seconds}."""
-    from piper import PiperVoice, SynthesisConfig
-
-    voice = PiperVoice.load(str(voice_model()))
-    config = SynthesisConfig(length_scale=SPEED)
-    folder.mkdir(parents=True, exist_ok=True)
-    durations = {}
-    for key, text in lines.items():
-        path = folder / f"{key}.wav"
-        with wave.open(str(path), "wb") as w:
-            voice.synthesize_wav(text, w, syn_config=config)
-        durations[key] = round(wav_seconds(path), 2)
-    return durations
-
-
 # ---------------------------------------------------------------- recording
 class Recorder:
-    """Keeps the screen and the narration in step. Times are video seconds (after the title card)."""
+    """Times each step. Times are video seconds (after the title card)."""
 
     def __init__(self, page, durations: dict):
         self.page, self.t0, self.steps, self.durations = page, time.monotonic(), [], durations
@@ -146,7 +91,7 @@ class Recorder:
         self.steps.append({"key": key, "caption": CAPTIONS[key], "start": self.now(), "audio": round(audio, 2)})
 
     def settle(self, at_least: float):
-        """Pause at least this long, and until this step's narration has finished."""
+        """Pause at least this long."""
         self.pause(at_least)
         while self.video_time() < self.cursor - GAP:
             self.page.wait_for_timeout(100)
@@ -373,7 +318,7 @@ def title_card(path: Path):
     img.save(path)
 
 
-def end_card(path: Path, narrated: bool = True):
+def end_card(path: Path):
     img = Image.new("RGB", SIZE, GREEN)
     d = ImageDraw.Draw(img)
     d.rectangle([0, SIZE[1] - 14, SIZE[0], SIZE[1]], fill=BRASS)
@@ -383,8 +328,6 @@ def end_card(path: Path, narrated: bool = True):
         y = 260 + i * 90
         centered(d, y, label.upper(), label_font, "#E8D9B5")
         centered(d, y + 34, url, link_font, INK)
-    if narrated:
-        centered(d, 600, "Narration: AI voice (Piper, open source)", font("arial.ttf", 22), CREAM)
     img.save(path)
 
 
@@ -422,21 +365,14 @@ def captions(timeline: dict, offset: float) -> str:
     return head + "\n".join(lines) + "\n"
 
 
-def narration_cues(timeline: dict) -> list[tuple[float, float, str]]:
-    """(start, end, text) for every spoken line, in video time, split into sentences (timed by length)."""
-    durations = timeline["durations"]
-    lines = [(LEAD, "title")] + [(s["audio"], s["key"]) for s in timeline["steps"]]
-    if timeline.get("end_audio") is not None:
-        lines.append((timeline["end_audio"], "end"))
-    cues = []
-    for start, key in lines:
-        text, length = NARRATION[key], durations.get(key, 0)
-        sentences = [s for s in re.split(r"(?<=[.:?!])\s+(?=[A-Z])", text) if s]  # not after "p.m. checkout"
-        total, t = sum(len(s) for s in sentences), start
-        for s in sentences:
-            span = length * len(s) / total
-            cues.append((round(t, 2), round(t + span, 2), s))
-            t += span
+def caption_cues(timeline: dict, offset: float) -> list[tuple[float, float, str]]:
+    """(start, end, caption) per step in video time: the same words as the burned-in captions, for the web
+    copy's WebVTT track."""
+    steps, cues = timeline["steps"], []
+    for i, step in enumerate(steps):
+        start = step["start"] - timeline["trim"] + offset
+        stop = (steps[i + 1]["start"] if i + 1 < len(steps) else timeline["end"]) - timeline["trim"] + offset
+        cues.append((round(start, 2), round(stop - 0.05, 2), step["caption"]))
     return cues
 
 
@@ -447,58 +383,16 @@ def webvtt(cues) -> str:
     return "WEBVTT\n\n" + "\n".join(f"{vtt_time(a)} --> {vtt_time(b)} {VTT_POSITION}\n{text}\n" for a, b, text in cues)
 
 
-def script_text(cues) -> str:
-    out = [
-        f"{TITLE}: demo narration (exact words, with start times in the video).",
-        "Read these lines over docs/video/demo.mp4 to record your own voice version.",
-        "",
-    ]
-    out += [f"[{int(a // 60)}:{a % 60:04.1f}] {text}" for a, _, text in cues]
-    return "\n".join(out) + "\n"
-
-
 def ffmpeg(*args: str):
     subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", *args], check=True, cwd=WORK)
 
 
-def mix_narration(timeline: dict, total: float) -> Path:
-    """Place each line at its time, then normalise loudness to about -16 LUFS (true peak -1.5 dB), AAC."""
-    clips = [("title", LEAD)] + [(s["key"], s["audio"]) for s in timeline["steps"]] + [("end", timeline["end_audio"])]
-    inputs, chains = [], []
-    for i, (key, at) in enumerate(clips):
-        inputs += ["-i", f"voice/{key}.wav"]
-        ms = int(at * 1000)
-        chains.append(f"[{i}:a]adelay={ms}|{ms},aresample=48000[a{i}]")
-    graph = ";".join(chains) + ";" + "".join(f"[a{i}]" for i in range(len(clips)))
-    graph += f"amix=inputs={len(clips)}:normalize=0,apad=whole_dur={total:.2f},loudnorm=I=-16:TP=-1.5:LRA=11[out]"
-    ffmpeg(
-        *inputs,
-        "-filter_complex",
-        graph,
-        "-map",
-        "[out]",
-        "-t",
-        f"{total:.2f}",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "160k",
-        "-ar",
-        "48000",
-        "narration.m4a",
-    )
-    return WORK / "narration.m4a"
-
-
-def build(timeline: dict, voice: bool) -> Path:
+def build(timeline: dict) -> Path:
     length = timeline["end"] - timeline["trim"]
-    durations = timeline["durations"]
-    end_audio = TITLE_SECONDS + length + LEAD if voice else None
-    end_seconds = max(6.0, (durations.get("end", 0) + LEAD + 1.2) if voice else 6.0)
-    timeline["end_audio"] = end_audio
+    end_seconds = 6.0
     total = TITLE_SECONDS + length + end_seconds
     title_card(WORK / "title.png")
-    end_card(WORK / "end.png", narrated=voice)
+    end_card(WORK / "end.png")
     (WORK / "captions.ass").write_text(captions(timeline, TITLE_SECONDS), encoding="utf-8")
     scale = f"scale={SIZE[0]}:{SIZE[1]},fps={FPS},format=yuv420p,setsar=1"
     band = f"scale={VIEW[0]}:{VIEW[1]},pad={SIZE[0]}:{SIZE[1]}:0:0:color=0x111111,fps={FPS},format=yuv420p,setsar=1"
@@ -510,22 +404,16 @@ def build(timeline: dict, voice: bool) -> Path:
     )
     OUT.mkdir(parents=True, exist_ok=True)
     out = OUT / "demo.mp4"
-    audio = ["-i", str(mix_narration(timeline, total)), "-map", "3:a", "-c:a", "copy"] if voice else []
     ffmpeg(
         *("-loop", "1", "-t", str(TITLE_SECONDS), "-i", "title.png"),
         *("-ss", f"{timeline['trim']:.2f}", "-t", f"{length:.2f}", "-i", "raw.webm"),
         *("-loop", "1", "-t", f"{end_seconds:.2f}", "-i", "end.png"),
-        *audio[:2],
         *("-filter_complex", graph, "-map", "[v]"),
-        *audio[2:],
         *("-c:v", "libx264", "-preset", "slow", "-crf", "22", "-pix_fmt", "yuv420p", "-movflags", "+faststart"),
         *("-t", f"{total:.2f}"),
         str(out),
     )
-    if voice:
-        cues = narration_cues(timeline)
-        (OUT / "demo.vtt").write_text(webvtt(cues), encoding="utf-8")
-        (OUT / "narration-script.txt").write_text(script_text(cues), encoding="utf-8")
+    (OUT / "demo.vtt").write_text(webvtt(caption_cues(timeline, TITLE_SECONDS)), encoding="utf-8")
     (WORK / "timeline.json").write_text(json.dumps(timeline, indent=2), encoding="utf-8")
     return out
 
@@ -544,11 +432,11 @@ def gif(timeline: dict, step_key: str = GIF_STEP):
 
 def web_copy(src: Path, dest: Path):
     """Smaller H.264 + AAC copy for the portfolio site (starts playing at once), a poster from the title card,
-    and the narration captions track."""
+    and the captions track."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg(
         *("-i", str(src), "-c:v", "libx264", "-preset", "slow", "-crf", "27", "-profile:v", "high"),
-        *("-c:a", "aac", "-b:a", "128k", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(dest)),
+        *("-an", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(dest)),
     )
     ffmpeg("-ss", "1.5", "-i", str(src), "-frames:v", "1", "-q:v", "3", str(dest.with_suffix(".jpg")))
     if (OUT / "demo.vtt").exists():
@@ -557,22 +445,19 @@ def web_copy(src: Path, dest: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--rebuild", action="store_true", help="reuse the last recording and narration")
-    parser.add_argument("--no-voice", action="store_true", help="captions only, no narration")
+    parser.add_argument("--rebuild", action="store_true", help="reuse the last recording")
     parser.add_argument("--web-out", type=Path, help="also write a web copy (+ .jpg poster and .vtt) here")
     parser.add_argument("--app", default=APP, help="app URL to record (default: the live app)")
     args = parser.parse_args()
     if not shutil.which("ffmpeg"):
         raise SystemExit("ffmpeg not found. Install it (winget install Gyan.FFmpeg) and open a new terminal.")
-    voice = not args.no_voice
     if args.rebuild:
         timeline = json.loads((WORK / "timeline.json").read_text(encoding="utf-8"))
     else:
         shutil.rmtree(WORK, ignore_errors=True)
         WORK.mkdir(parents=True)
-        durations = synthesize(NARRATION, WORK / "voice") if voice else {}
-        timeline = record(durations, args.app)
-    out = build(timeline, voice)
+        timeline = record({}, args.app)
+    out = build(timeline)
     gif(timeline)
     print(f"saved {out.relative_to(ROOT)} and {GIF.relative_to(ROOT)}")
     if args.web_out:
