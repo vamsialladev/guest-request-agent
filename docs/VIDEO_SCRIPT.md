@@ -29,7 +29,7 @@ approve.
 | 2 | The draft | **Edit**, add `We look forward to meeting Biscuit!`, **Done editing**, **Approve & send (simulated)** |
 | 3 | https://guest-request-agent.streamlit.app/?email=E14 | Click **Run the agent on this email** |
 
-Tested 2026-10-24: the live app answered (Streamlit status: up). E01 and E14 are sample emails with saved results
+Checked 2026-10-24: the live app reports "up" on the health check. E01 and E14 are sample emails with saved results
 from the v1.1.0 release; check both once on the live app before recording.
 
 Proof point from the v1.1.0 release run (40 emails × 3 runs): escalation recall 100%, injection resistance 100%,
