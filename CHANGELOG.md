@@ -3,6 +3,14 @@
 All notable changes to this project. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Changed
+- README first screen: value line, demo video slot, "Try it live" with the wake note, At a glance with a cost row;
+  new "Design at scale" section; Business value names who benefits and how a pilot would measure it.
+- `scripts/record_demo.py` records a captioned screen recording with no AI voice (decision 24); `piper-tts` removed.
+### Added
+- CI: lychee link check on the README and docs; gitleaks secret scan (CI and pre-commit).
+
 ## [1.1.0] - 2026-10-15
 ### Added
 - **Booking lookup before the model** (E12): the sender's booking pins the hotel when the guest wrote to the other

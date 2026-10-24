@@ -249,3 +249,13 @@ storage and staff reports.
 
 All gate failures in the dev and final runs (eight detector, metric or label bugs) were measurement bugs; I found no case where
 the model made a forbidden promise, leaked a booking or missed an escalation.
+
+## 24. No AI voice in the demo video; my own voice instead (2026-10-24)
+**Context:** The demo video had an AI narration (Piper), labelled as such. Viewers said an AI voice makes a portfolio
+demo feel less personal.
+**Decision:** `scripts/record_demo.py` no longer synthesizes or mixes a voice: it records the live app with
+Playwright and burns in the step captions. I record my own voice from `docs/VIDEO_SCRIPT.md`; captions of my voice
+come from `scripts/make_captions.py` (faster-whisper, local). `piper-tts` removed from `requirements-dev.txt`.
+**Trade-off:** A new video needs me to record it.
+**Result:** The README has a `<!-- DEMO-VIDEO -->` slot for the new video; the GIF stays (it never had sound).
+
