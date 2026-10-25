@@ -19,6 +19,8 @@ accent_dark = "#DDB874"
 
 [links]
 case_study = "https://vamsialla.com/projects/guest-request-agent.html"
+demo = "https://vamsialla.com/projects/guest-request-agent.html#demo"
+portfolio = "https://vamsialla.com"
 github = "https://github.com/vamsialladev/guest-request-agent"
 decisions = "https://github.com/vamsialladev/guest-request-agent/blob/main/docs/DECISIONS.md"
 project1 = "https://hotel-ops-assistant.streamlit.app"

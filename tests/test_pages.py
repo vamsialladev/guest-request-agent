@@ -88,6 +88,14 @@ def test_every_page_renders_without_errors(app, path):
     assert not (logs / "errors.jsonl").exists()
 
 
+def test_sidebar_links_to_the_demo_video_github_and_portfolio(app):
+    at, _ = app
+    at.run()
+    text = " ".join(h.value for h in at.get("html"))
+    assert 'href="https://vamsialla.com/projects/guest-request-agent.html#demo"' in text and ">Watch the demo<" in text
+    assert ">GitHub<" in text and 'href="https://vamsialla.com"' in text
+
+
 @pytest.mark.parametrize("path", PAGES)
 def test_an_exception_on_any_page_shows_the_friendly_message(app, monkeypatch, path):
     at, logs = app
