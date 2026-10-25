@@ -58,7 +58,22 @@ offers JSONL downloads. A persistent store with retention is Project 4.
 | API outage | Deterministic fallback: holding reply + a front-desk task; the email is never dropped | `src/agent.py` |
 | XSS through email text | Every dynamic value is escaped before HTML (`src/display.py`); CSV downloads neutralize formulas | `src/display.py`, `src/monitoring.py` |
 | Admin page guessing | Constant-time comparison, 5-attempt lockout for 15 minutes, 1 s delay per failure, 30-minute auto sign-out. Demo protection, not real authentication (Project 4) | `src/admin.py` |
-| Personal data typed into the public demo | Visitors are asked not to enter real details; logs are owner-only and reset on restart. Redaction before logging is Project 4 | `views/about.py` |
+| Personal data typed into the public demo | Visitors are asked not to enter real details; since v1.1.0 emails, phone numbers, card-like numbers and names are redacted and booking IDs hashed before any write, kept 30 days | `src/pii.py`, `views/about.py` |
+
+## OWASP Top 10 for LLM applications (2025)
+
+| ID | Risk | How this project handles it |
+|---|---|---|
+| LLM01 | Prompt injection | The email and tool results are labelled data; planted instructions are quarantined before the model; no tool can approve, refund or send; 6 injection cases gated at 100% |
+| LLM02 | Sensitive information disclosure | `find_booking` is scoped to the sender's address; the model sees only the booking fields a reply needs; logs are redacted before any write (`src/pii.py`) and owner-only |
+| LLM03 | Supply chain | Pinned dependencies, pip-audit in CI, Dependabot, secret scanning and push protection |
+| LLM04 | Data and model poisoning | Policy documents are a pinned copy of stage 1's synthetic set, checked in CI against their source commit |
+| LLM05 | Improper output handling | Every dynamic value is escaped before display; CSV downloads neutralize formulas; drafts are text, never executed |
+| LLM06 | Excessive agency | Tools only read or propose; `propose_action` always needs a manager; staff approval is the only path to the outbox |
+| LLM07 | System prompt leakage | No secrets in prompts; the prompt is in the repository anyway |
+| LLM08 | Vector and embedding weaknesses | Policy search is BM25 over a fixed, pinned document set; no user content is indexed |
+| LLM09 | Misinformation | Every date, price, time and room number must appear in a tool result (grounding check); citations to the policy passage; no-promise guard |
+| LLM10 | Unbounded consumption | At most 6 model turns, 30 s timeout and one retry, per-session and daily caps, `KILL_SWITCH`, cost budgets checked in CI |
 
 ## Reporting a vulnerability
 Email vamsialla.dev@gmail.com. Please don't open a public issue for security problems.
