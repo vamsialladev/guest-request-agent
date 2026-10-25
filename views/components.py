@@ -55,6 +55,23 @@ def startup_checks() -> list[str]:
     return log_missing()
 
 
+@st.cache_resource(show_spinner=False)
+def structured_startup_log() -> bool:
+    """Once per server start, the same JSON lines every hotel app writes (hotel-ai-platform jsonlog): app start
+    with the deployed version, which settings are set or missing (never values), and dependency status."""
+    from hotelplatform import jsonlog
+
+    from src import ops
+    from src.config import LLM_MODEL
+    from src.secrets_check import OPTIONAL, REQUIRED
+
+    ops.configure_logs()
+    jsonlog.app_start(app_version=ops.APP_VERSION)
+    jsonlog.config_loaded(list(REQUIRED + OPTIONAL), model=LLM_MODEL)
+    jsonlog.dependency_health(ops.dependencies())
+    return True
+
+
 @st.cache_resource(show_spinner="Starting up: building the policy index and the synthetic bookings…")
 def warm_up() -> bool:
     from src import policy_search
@@ -428,9 +445,10 @@ def result_panel(result: AgentResult, request_id: str, email: dict, key: str, pa
             "personally.</small></div>"
         )
     if result.fallback_reason:
+        reference = result.flags.get("reference")
         st.warning(
             "The assistant couldn't finish, so this is a safe holding reply and a task for the front desk. "
-            "Please reply personally.",
+            "Please reply personally." + (f" Reference: {reference}" if reference else ""),
             icon=":material/support:",
         )
     shown = sum(1 for s in result.steps if s.kind != "model")

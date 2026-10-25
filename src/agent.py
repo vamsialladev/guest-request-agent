@@ -22,6 +22,7 @@ import time
 from dataclasses import dataclass
 
 import anthropic
+from hotelplatform import tracing
 from pydantic import ValidationError
 
 from src import guards, triage
@@ -205,6 +206,19 @@ def greeting_name(email: Email, ctx: ToolContext) -> str:
     return "Guest"
 
 
+def _set(span, **attrs) -> None:
+    """Tracing never breaks the agent: no span (evals, tests) or an odd response object is fine."""
+    if span is not None:
+        try:
+            span.set(**attrs)
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _usage(response, field: str):
+    return getattr(getattr(response, "usage", None), field, None)
+
+
 def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, store=None) -> AgentResult:
     started = clock()
     ctx = ToolContext(sender_email=email.sender, property=prop)
@@ -229,8 +243,13 @@ def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, sto
             result=injection,
         )
 
+    if (trace := tracing.current()) is not None:  # shared ops trace (hotel-ai-platform); None in evals and tests
+        trace.record("triage", 0.0, escalation=escalation, injection=injection)
+
     # Project 4: deterministic booking lookup before the model (sender-scoped, no API call).
-    lookup, _ = execute(ctx, "find_booking", {})
+    with tracing.span("tool:find_booking", deterministic=True) as span:
+        lookup, failed = execute(ctx, "find_booking", {})
+        _set(span, ok=not failed)
     ctx.pinned_property = pinned_property(ctx)
     if ctx.pinned_property:
         ctx.add_step(
@@ -255,7 +274,10 @@ def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, sto
         client = client or make_client()
         for turn in range(1, MAX_AGENT_STEPS + 1):
             t0 = clock()
-            response = client.messages.create(**request_params(system, messages))
+            with tracing.span("model_call", turn=turn, model=LLM_MODEL) as span:
+                response = client.messages.create(**request_params(system, messages))
+                _set(span, tokens_in=_usage(response, "input_tokens"), tokens_out=_usage(response, "output_tokens"),
+                     stop_reason=getattr(response, "stop_reason", None))  # fmt: skip
             usage["calls"] += 1
             usage["in"] += response.usage.input_tokens
             usage["out"] += response.usage.output_tokens
@@ -290,7 +312,9 @@ def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, sto
                         content, is_error = json.dumps({"error": f"Invalid draft: {exc.errors()[0]['msg']}"}), True
                         ctx.add_step("tool", "draft_reply", "Invalid final answer; asked the model to fix it", ok=False)
                 else:
-                    content, is_error = execute(ctx, block.name, block.input)
+                    with tracing.span(f"tool:{block.name}", args=block.input) as span:
+                        content, is_error = execute(ctx, block.name, block.input)
+                        _set(span, ok=not is_error, result=content[:500])
                 results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": content, "is_error": is_error}
                 )

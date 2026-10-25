@@ -1,6 +1,7 @@
 """Inbox (main page): pick a sample guest email, run the agent, review the draft, approve, edit or reject."""
 
 import streamlit as st
+from hotelplatform import bots
 
 from src.config import MAX_EMAILS_PER_SESSION, SIM_TODAY
 from src.inbox import load_inbox, rows, to_email
@@ -16,6 +17,9 @@ ui.header(
     f"{b.hotel_group} · Inbox · simulated today: {fmt_date(SIM_TODAY)}",
 )
 ui.warm_up()
+if bots.is_bot(st.query_params):  # streamlit-keep-awake: the page and search index load; nothing runs or is logged
+    st.caption("Awake.")
+    st.stop()
 no_key = ui.secrets_missing()
 
 items = load_inbox()
