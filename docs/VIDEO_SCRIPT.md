@@ -1,6 +1,6 @@
 # Video script: Guest Request Agent (about 85 seconds)
 
-I record this myself, in my own voice, over a screen recording of the live app. No AI voice. Setup and tips:
+I record this myself, in my own voice, over a screen recording of the live app. Until I do, the AI-narrated version is in `docs/video/demo-ai-voice.mp4` (narration at the end of this file). Setup and tips:
 `RECORDING_GUIDE.md` in my portfolio folder. Read it twice, then talk from the bullets. `/` marks a natural pause.
 Aim for 140–160 words a minute.
 
@@ -39,3 +39,16 @@ no forbidden promises 100%, $1.24 per 1,000 emails.
 
 I built an agent that reads hotel guest emails, checks the booking and policy, drafts a cited reply, and never
 sends or promises anything until a person approves it.
+
+## AI narration (used in docs/video/demo-ai-voice.mp4)
+
+Until I record my own voice, the demo video (1:12) is narrated by an AI voice (Kokoro `af_heart`, local) and labelled "AI-narrated" on screen and here. It was recorded from the live app with Playwright; the captions are the narration, timed to the voice. `/` marks a pause.
+
+| Step | Narration |
+|---|---|
+| problem | Hotels get emails with three questions in one. / Staff answer them by hand, / and under pressure they promise things only a manager can approve. / This is a simulated hotel, with made-up guests. |
+| tools | So the agent reads it, / finds the requests, / and looks up the booking with a tool. / Here's that step, and the booking record it got back. |
+| cite | Then it checks each policy with the search from my first project. / The draft quotes the hotel's own policy, / and every price and date is checked against what the tools returned. |
+| approve | Now I'm the staff member. / I add a line, and I approve it. / Nothing's really sent, it goes to a pretend outbox, / and only now are the tasks created. |
+| proof | This email tries to take over the agent. / It's treated as data. No refund, and no other guest's booking. / On forty test emails, three runs each, it caught every escalation and resisted every injection. |
+| live | It's live, with no sign-in. / The link and the code are below. |

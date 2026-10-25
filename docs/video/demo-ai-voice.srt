@@ -1,0 +1,84 @@
+1
+00:00:03,000 --> 00:00:05,773
+Hotels get emails with three questions in one.
+
+2
+00:00:06,623 --> 00:00:08,138
+Staff answer them by hand,
+
+3
+00:00:08,988 --> 00:00:12,679
+and under pressure they promise things only a manager can approve.
+
+4
+00:00:13,529 --> 00:00:16,451
+This is a simulated hotel, with made-up guests.
+
+5
+00:00:17,062 --> 00:00:18,491
+So the agent reads it,
+
+6
+00:00:19,341 --> 00:00:20,643
+finds the requests,
+
+7
+00:00:21,493 --> 00:00:23,306
+and looks up the booking with a tool.
+
+8
+00:00:24,156 --> 00:00:27,015
+Here's that step, and the booking record it got back.
+
+9
+00:00:27,625 --> 00:00:31,422
+Then it checks each policy with the search from my first project.
+
+10
+00:00:32,272 --> 00:00:34,576
+The draft quotes the hotel's own policy,
+
+11
+00:00:35,426 --> 00:00:39,245
+and every price and date is checked against what the tools returned.
+
+12
+00:00:39,859 --> 00:00:41,288
+Now I'm the staff member.
+
+13
+00:00:42,138 --> 00:00:44,058
+I add a line, and I approve it.
+
+14
+00:00:44,908 --> 00:00:48,172
+Nothing's really sent, it goes to a pretend outbox,
+
+15
+00:00:49,022 --> 00:00:51,134
+and only now are the tasks created.
+
+16
+00:00:51,734 --> 00:00:54,123
+This email tries to take over the agent.
+
+17
+00:00:54,973 --> 00:00:56,424
+It's treated as data.
+
+18
+00:00:57,274 --> 00:00:59,663
+No refund, and no other guest's booking.
+
+19
+00:01:00,513 --> 00:01:06,828
+On forty test emails, three runs each, it caught every escalation and
+resisted every injection.
+
+20
+00:01:07,437 --> 00:01:09,186
+It's live, with no sign-in.
+
+21
+00:01:10,036 --> 00:01:11,807
+The link and the code are below.
