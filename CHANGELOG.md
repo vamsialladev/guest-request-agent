@@ -4,6 +4,17 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added (final stage: guardrails, tracing, red team; 1.2.0)
+- Shared guardrails, tracing and ops log from [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)
+  v0.1.2 (`src/ops.py`, decision 25): attacks flagged, card/ID numbers replaced before the model, draft checked for
+  leaked contact details, prompt leaks and off-brand text; one trace per email with each model turn and tool call
+  as a span; "Reference: ..." on failures; Admin → Traces; staff decisions as feedback; JSON startup logs;
+  `?source=keepawake` visits run nothing.
+- Red-team suite in CI (`scripts/run_redteam.py`, docs/RED_TEAM.md) and a CycloneDX SBOM artifact.
+### Changed (1.2.0)
+- The planted-instruction quarantine also uses the shared patterns (decision 26): held-out cases g03/g04 fixed; no
+  eval email changes.
+- Admin and staff lockout counted per server process as well as per session.
 ### Changed
 - README first screen: value line, demo video slot, "Try it live" with the wake note, At a glance with a cost row;
   new "Design at scale" section; Business value names who benefits and how a pilot would measure it.

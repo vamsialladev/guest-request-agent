@@ -285,6 +285,7 @@ What exists today is marked **Built**; anything else is **Roadmap**.
 | **PII and tenant isolation** | **Built:** `find_booking` only returns the sender's own bookings, and the sender's booking is looked up before the model runs and pins the hotel ([decision 18](docs/DECISIONS.md)). The model sees the email (planted instructions quarantined first) and only the booking fields the reply uses. The request log is redacted before any write (`src/pii.py`) and kept 30 days. One deployment serves one hotel group. **Roadmap:** a `hotel_group_id` on every booking, passage and log record for a multi-group deployment, enforced in the tool layer (the stage 7 tool server does this). |
 | **10K → 1M users** | **What breaks first:** one agent run takes about 4–8 s and several model turns, so a busy inbox queues up behind a single app process; the synthetic bookings live in a file. **Built:** results for sample emails are reused, per-session caps, the persistent Postgres log, budgets in CI. **Roadmap:** read bookings from the client's system through a read-only API; drafting as a background job from a queue (an inbox webhook adds the email, staff see drafts as they finish); several workers; per-property daily budgets; prompt caching for the system prompt and tool definitions. |
 | **Monitoring, alerting, hallucination and off-brand detection** | **Built:** every date, price, time and room number in a draft must come from a tool result (fact grounding); no-promise and escalation checks run on every draft; the Operations page shows errors, p50/p95, cost per day, escalations, fallbacks and budget status; a daily health check opens a GitHub issue when the app is down ([hotel-ai-handoff](https://github.com/vamsialladev/hotel-ai-handoff)); eval gates with p95 and cost budgets run in CI. **Roadmap:** off-brand tone detection with an LLM judge once it agrees with human labels (the stage 3 judge doesn't yet). |
+| **Observability** | **Built (1.2.0):** every email is one trace (OpenTelemetry-shaped IDs) with a span per step: input guardrails → triage → the deterministic booking lookup → each model turn (tokens, stop reason) → each tool call (arguments, ok). Rows go to the shared `ops_request_log` / `ops_trace_span` tables (one Neon database for all the hotel apps), PII removed before the write, batched off the request path, 30-day retention. A failed run shows "Reference: 4f1c9a2e"; Admin → **Traces** finds it and draws the waterfall. Staff approve/reject decisions are recorded as 👍/👎 on the trace. Structured JSON logs (app start + version, config set/missing, slow runs over the 12 s p95 budget, caps). A daily Action in streamlit-keep-awake opens an issue if the error rate passes 5%. **Roadmap:** an OpenTelemetry exporter to a real collector. |
 | **Failure modes and rollback** | **Built:** 30 s timeout + 1 retry, then a deterministic fallback reply and a staff task; `KILL_SWITCH` stops all model calls and sends every email the safe holding reply; staff approval is the only path out, so a bad draft never reaches a guest. Rollback: revert the commit on `main` (Streamlit Cloud redeploys) or run the previous release tag. |
 
 ## Run locally
@@ -440,6 +441,16 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 ## Security and privacy
 
 **Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
+
+**Guardrails (1.2.0, shared with every hotel app through [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)):**
+a guest email is never dropped (staff must see it), so attack patterns are flagged on the trace and planted
+instructions are removed before the model reads the email. That's this app's markers plus the shared ones, which
+caught an instruction hidden in an HTML comment and a jailbreak sentence that this app's own list missed. Card and ID
+numbers are replaced before the model. On the draft: promises removed (this app's guard), leaked contact details
+replaced, prompt leaks and off-brand text turned into a holding reply for a manager. **Red team**
+([docs/RED_TEAM.md](docs/RED_TEAM.md), in CI): the shared corpus passes 48/48 through this app; this app's 19
+held-out cases passed 14/19 on the first run and 18/19 after the fix (the one left is a paraphrase with no trigger
+words). Tool layer: another guest's booking is never returned, and refunds are only proposed.
 
 Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
 propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are

@@ -259,3 +259,21 @@ come from `scripts/make_captions.py` (faster-whisper, local). `piper-tts` remove
 **Trade-off:** A new video needs me to record it.
 **Result:** The README has a `<!-- DEMO-VIDEO -->` slot for the new video; the GIF stays (it never had sound).
 
+
+## 25. Shared guardrails and tracing from one package (hotel-ai-platform v0.1.2, 2026-10-25)
+- **Context:** the final plan adds guardrails, a red team, tracing and a shared ops log to every hotel app. This app
+  already had injection triage, a promise guard and grounding checks.
+- **Decision:** wire the shared package in `src/ops.py`. Emails are flagged, never dropped; card and ID numbers are
+  replaced before the model; the shared output check adds leaked contact details, prompt leaks and off-brand text on
+  top of this app's guard. Each model turn and tool call is a span. Staff approve/reject decisions are the feedback.
+- **Trade-off:** two logs per email (this app's detailed record and the shared ops row).
+- **Result:** one Admin view, one daily failure check and one runbook work across all the apps.
+
+## 26. The quarantine also uses the shared patterns (2026-10-25)
+- **Context:** held-out red-team cases g03 (an instruction inside an HTML comment) and g04 (a jailbreak sentence)
+  got past this app's own marker list on the first run.
+- **Decision:** a block is quarantined if this app's markers or the shared planted-instruction/jailbreak patterns
+  match it; an HTML comment counts as one block.
+- **Trade-off:** more patterns, more chance of removing a real sentence. Checked: the 48 eval emails lose exactly
+  the same blocks as before, so the model's input for every eval email is unchanged.
+- **Result:** own cases 14/19 → 18/19; the one left (g08) is a paraphrase with no trigger words, listed as a known gap.
