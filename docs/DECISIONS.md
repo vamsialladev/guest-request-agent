@@ -277,3 +277,44 @@ come from `scripts/make_captions.py` (faster-whisper, local). `piper-tts` remove
 - **Trade-off:** more patterns, more chance of removing a real sentence. Checked: the 48 eval emails lose exactly
   the same blocks as before, so the model's input for every eval email is unchanged.
 - **Result:** own cases 14/19 → 18/19; the one left (g08) is a paraphrase with no trigger words, listed as a known gap.
+
+## 27. A second orchestration with LangGraph, behind a flag; the manual loop stays the default (2026-10-26)
+- **Context:** the final plan asks for a second orchestration (LangGraph or the OpenAI Agents SDK), the same evals on
+  both, and a comparison.
+- **Decision:** the loop's three pieces became shared functions (`model_turn`, `stop_reason_failure`, `run_tools`);
+  `run_loop` (manual) and `src/agent_graph.py` (a LangGraph `StateGraph`: model → tools → model, conditional edges to
+  END) both call them, chosen by `ORCHESTRATOR=manual|langgraph`. Same prompts, tools, guards, spans and timeline, so
+  the comparison isolates the orchestration. Scripted tests check both give identical results on five cases.
+- **Comparison** (40 emails x 3 runs each, live, Claude Haiku 5.5, 2026-10-26;
+  `eval/reports/main-2026-10-26-orchestrator-{manual,langgraph}-2026-10-26.md`):
+
+  | | Manual loop | LangGraph |
+  |---|---|---|
+  | Hard gates (escalation, injection, no promises) | 100% | 100% |
+  | Request coverage / fact grounding / tool use | 100% / 99% / 100% | 100% / 99% / 100% |
+  | Task routing | 98% | 96% (95–98%) |
+  | Citation accuracy (strict) | 96% (94–100%) | 100% |
+  | p50 / p95 | 4.3 s / 8.5 s | 4.4 s / 8.9 s |
+  | Cost per 1,000 emails | $1.22 | $1.23 |
+  | Orchestration code | 14 lines (+49 shared) | 42 lines (+49 shared) |
+  | Extra dependency | none | `langgraph` (and its tree) |
+  | Debugging | a plain stack trace in one function | graph state per node; `recursion_limit` instead of a for loop |
+
+  The quality differences are inside run-to-run ranges (routing and citations swap places between runs), and the
+  model makes the same calls either way, so this measures the orchestration overhead, not the agent.
+- **Trade-off:** LangGraph would earn its place with branching (parallel tool calls, human-in-the-loop interrupts,
+  checkpointed resumable runs). This agent's loop is linear and short.
+- **Result:** the manual loop stays the default (same quality, three times less orchestration code, no extra
+  dependency on Streamlit Cloud). LangGraph stays available behind the flag, tested in CI.
+
+## 28. The agent as an A2A server (official a2a-sdk), so other agents can hand it guest emails (2026-10-26)
+- **Context:** stage 6's concierge should delegate complex guest messages to this agent over A2A, with a fallback.
+- **Decision:** `src/a2a_server.py`: an agent card at `/.well-known/agent-card.json` (one skill, bearer auth
+  declared), JSON-RPC `SendMessage` with the task lifecycle submitted → working → completed (one data artifact: requests,
+  draft, tasks, actions needing approval, trace ID) or failed; `Authorization: Bearer $A2A_TOKEN` checked in constant
+  time on everything but the card. It runs the same `service.process` as the app, so guardrails, tracing and the
+  request log apply, with `source="a2a"`.
+- **Trade-off:** Streamlit Community Cloud can't serve an extra HTTP endpoint, so the A2A server runs locally or in
+  Docker (`docker compose up a2a`); on the free live demo the concierge shows its fallback path instead.
+- **Result:** tested end to end over an in-process ASGI transport with the official client: card, completed task with
+  the artifact, wrong token refused (401), empty email failed cleanly.

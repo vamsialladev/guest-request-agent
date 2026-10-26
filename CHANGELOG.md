@@ -4,6 +4,11 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added (protocols and frameworks; 1.3.0)
+- `ORCHESTRATOR=langgraph`: the same agent as a LangGraph state graph (`src/agent_graph.py`); compared on the full eval,
+  3 runs each, manual stays the default (decision 27).
+- A2A server (`src/a2a_server.py`, official `a2a-sdk`): agent card, bearer auth, task lifecycle, data artifact;
+  `docker compose up a2a` (decision 28). Optional dependencies in `requirements-agents.txt`.
 ### Added (final stage: guardrails, tracing, red team; 1.2.0)
 - Shared guardrails, tracing and ops log from [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)
   v0.1.2 (`src/ops.py`, decision 25): attacks flagged, card/ID numbers replaced before the model, draft checked for
