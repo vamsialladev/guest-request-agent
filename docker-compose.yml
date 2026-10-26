@@ -34,5 +34,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # The A2A endpoint (decision 28): another agent sends a guest email, gets the structured result back.
+  #   docker compose up a2a   -> http://localhost:9100/.well-known/agent-card.json  (calls need Bearer $A2A_TOKEN)
+  a2a:
+    build: .
+    command: ["sh", "-c", "pip install --no-cache-dir -r requirements-agents.txt && python -m src.a2a_server"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://hotel:${POSTGRES_PASSWORD:-local-only-change-me}@db:5432/hotel
+      A2A_TOKEN: ${A2A_TOKEN:?set A2A_TOKEN in .env}
+      A2A_PUBLIC_URL: http://localhost:9100
+    ports:
+      - "9100:9100"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
