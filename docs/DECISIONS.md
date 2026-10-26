@@ -260,7 +260,7 @@ come from `scripts/make_captions.py` (faster-whisper, local). `piper-tts` remove
 **Result:** The README has a `<!-- DEMO-VIDEO -->` slot for the new video; the GIF stays (it never had sound).
 
 
-## 25. Shared guardrails and tracing from one package (hotel-ai-platform v0.1.2, 2026-10-25)
+## 25. Shared guardrails and tracing from one package (hotel-ai-platform v0.1.3, 2026-10-25)
 - **Context:** the final plan adds guardrails, a red team, tracing and a shared ops log to every hotel app. This app
   already had injection triage, a promise guard and grounding checks.
 - **Decision:** wire the shared package in `src/ops.py`. Emails are flagged, never dropped; card and ID numbers are
