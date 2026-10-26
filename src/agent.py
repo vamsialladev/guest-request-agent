@@ -33,6 +33,7 @@ from src.config import (
     LLM_RETRIES,
     LLM_TIMEOUT_S,
     MAX_AGENT_STEPS,
+    ORCHESTRATOR,
     SIM_TODAY,
     model_calls_enabled,
 )
@@ -219,6 +220,77 @@ def _usage(response, field: str):
     return getattr(getattr(response, "usage", None), field, None)
 
 
+def model_turn(client, system: str, messages: list, ctx: ToolContext, turn: int, usage: dict, clock):
+    """One model call: the span, the usage, the timeline step. Returns (response, tool_use blocks)."""
+    t0 = clock()
+    with tracing.span("model_call", turn=turn, model=LLM_MODEL) as span:
+        response = client.messages.create(**request_params(system, messages))
+        _set(span, tokens_in=_usage(response, "input_tokens"), tokens_out=_usage(response, "output_tokens"),
+             stop_reason=getattr(response, "stop_reason", None))  # fmt: skip
+    usage["calls"] += 1
+    usage["in"] += response.usage.input_tokens
+    usage["out"] += response.usage.output_tokens
+    tool_uses = [b for b in response.content if b.type == "tool_use"]
+    names = ", ".join(b.name for b in tool_uses) or "no tool"
+    ctx.add_step("model", "model_turn", f"Model turn {turn}: {names}", ms=round((clock() - t0) * 1000))
+    return response, tool_uses
+
+
+def stop_reason_failure(response, tool_uses) -> str | None:
+    """Why the turn ends without a draft, or None to keep going."""
+    if response.stop_reason == "refusal":
+        return "model_refusal"
+    if not tool_uses:
+        return "no_final_answer" if response.stop_reason != "max_tokens" else "max_tokens"
+    return None
+
+
+def run_tools(tool_uses, ctx: ToolContext, language: str, turn: int, language_retries: int):
+    """Run one turn's tool calls. Returns (tool_result blocks, the final draft or None, language_retries)."""
+    final, results = None, []
+    for block in tool_uses:
+        if block.name == "draft_reply":
+            try:
+                final = DraftReplyInput.model_validate(block.input)
+                content, is_error = "Draft received.", False
+                if (
+                    not final.escalate
+                    and triage.detect_language(final.reply) != language
+                    and language_retries == 0
+                    and turn < MAX_AGENT_STEPS
+                ):
+                    language_retries += 1
+                    name = LANGUAGE_NAMES.get(language, language)
+                    content, is_error = json.dumps({"error": LANGUAGE_RETRY.format(language=name)}), True
+                    final = None
+                    ctx.add_step("guard", "language", f"Reply not in {name}: asked for a rewrite", ok=False)
+            except ValidationError as exc:
+                content, is_error = json.dumps({"error": f"Invalid draft: {exc.errors()[0]['msg']}"}), True
+                ctx.add_step("tool", "draft_reply", "Invalid final answer; asked the model to fix it", ok=False)
+        else:
+            with tracing.span(f"tool:{block.name}", args=block.input) as span:
+                content, is_error = execute(ctx, block.name, block.input)
+                _set(span, ok=not is_error, result=content[:500])
+        results.append({"type": "tool_result", "tool_use_id": block.id, "content": content, "is_error": is_error})
+    return results, final, language_retries
+
+
+def run_loop(client, system: str, messages: list, ctx: ToolContext, language: str, usage: dict, clock):
+    """The manual tool-use loop (the default orchestration). Returns (final draft or None, failure or None)."""
+    language_retries = 0
+    for turn in range(1, MAX_AGENT_STEPS + 1):
+        response, tool_uses = model_turn(client, system, messages, ctx, turn, usage, clock)
+        failure = stop_reason_failure(response, tool_uses)
+        if failure:
+            return None, failure
+        messages.append({"role": "assistant", "content": response.content})
+        results, final, language_retries = run_tools(tool_uses, ctx, language, turn, language_retries)
+        if final is not None:
+            return final, None
+        messages.append({"role": "user", "content": results})
+    return None, "step_limit"
+
+
 def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, store=None) -> AgentResult:
     started = clock()
     ctx = ToolContext(sender_email=email.sender, property=prop)
@@ -267,62 +339,16 @@ def run_agent(email: Email, prop: str, client=None, clock=time.perf_counter, sto
         return fallback(email, prop, ctx, escalation, injection, "paused", usage, clock() - started, language)
     final: DraftReplyInput | None = None
     failure: str | None = None
-    language_retries = 0
     messages = [{"role": "user", "content": user_message(email, lookup)}]
     system = build_system(prop, escalation, injection, ctx.pinned_property, language)
     try:
         client = client or make_client()
-        for turn in range(1, MAX_AGENT_STEPS + 1):
-            t0 = clock()
-            with tracing.span("model_call", turn=turn, model=LLM_MODEL) as span:
-                response = client.messages.create(**request_params(system, messages))
-                _set(span, tokens_in=_usage(response, "input_tokens"), tokens_out=_usage(response, "output_tokens"),
-                     stop_reason=getattr(response, "stop_reason", None))  # fmt: skip
-            usage["calls"] += 1
-            usage["in"] += response.usage.input_tokens
-            usage["out"] += response.usage.output_tokens
-            tool_uses = [b for b in response.content if b.type == "tool_use"]
-            names = ", ".join(b.name for b in tool_uses) or "no tool"
-            ctx.add_step("model", "model_turn", f"Model turn {turn}: {names}", ms=round((clock() - t0) * 1000))
-            if response.stop_reason == "refusal":
-                failure = "model_refusal"
-                break
-            if not tool_uses:
-                failure = "no_final_answer" if response.stop_reason != "max_tokens" else "max_tokens"
-                break
-            messages.append({"role": "assistant", "content": response.content})
-            results = []
-            for block in tool_uses:
-                if block.name == "draft_reply":
-                    try:
-                        final = DraftReplyInput.model_validate(block.input)
-                        content, is_error = "Draft received.", False
-                        if (
-                            not final.escalate
-                            and triage.detect_language(final.reply) != language
-                            and language_retries == 0
-                            and turn < MAX_AGENT_STEPS
-                        ):
-                            language_retries += 1
-                            name = LANGUAGE_NAMES.get(language, language)
-                            content, is_error = json.dumps({"error": LANGUAGE_RETRY.format(language=name)}), True
-                            final = None
-                            ctx.add_step("guard", "language", f"Reply not in {name}: asked for a rewrite", ok=False)
-                    except ValidationError as exc:
-                        content, is_error = json.dumps({"error": f"Invalid draft: {exc.errors()[0]['msg']}"}), True
-                        ctx.add_step("tool", "draft_reply", "Invalid final answer; asked the model to fix it", ok=False)
-                else:
-                    with tracing.span(f"tool:{block.name}", args=block.input) as span:
-                        content, is_error = execute(ctx, block.name, block.input)
-                        _set(span, ok=not is_error, result=content[:500])
-                results.append(
-                    {"type": "tool_result", "tool_use_id": block.id, "content": content, "is_error": is_error}
-                )
-            if final is not None:
-                break
-            messages.append({"role": "user", "content": results})
+        if ORCHESTRATOR == "langgraph":  # the same steps as a LangGraph state graph (src/agent_graph.py, decision 27)
+            from src.agent_graph import run_graph
+
+            final, failure = run_graph(client, system, messages, ctx, language, usage, clock)
         else:
-            failure = "step_limit"
+            final, failure = run_loop(client, system, messages, ctx, language, usage, clock)
     except anthropic.APIError as exc:
         failure = f"api_{classify(exc)}"
     except Exception as exc:  # noqa: BLE001 - any failure falls back to a safe draft, recorded for the owner
