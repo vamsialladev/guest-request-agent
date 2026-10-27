@@ -140,6 +140,7 @@ def staff_panel(recent_items):
     from src.roles import REPORT_REASONS, report_record, sign_out, staff_attempt
     from src.usage import append_jsonl, now_iso
 
+    sidebar_links()
     with st.sidebar:
         if not is_staff():
             st.caption(MODE_LABEL)
@@ -240,6 +241,19 @@ def link_row() -> str:
         for key, label in items
         if links.get(key)
     )
+
+
+def sidebar_links():
+    """Sidebar: the demo video, the code and the portfolio, one tap away (new tab)."""
+    links = brand().links
+    items = [("demo", "Watch the demo"), ("github", "GitHub"), ("portfolio", "Portfolio")]
+    row = " · ".join(
+        f'<a href="{esc(links[key])}" target="_blank" rel="noopener noreferrer">{esc(label)}</a>'
+        for key, label in items
+        if links.get(key)
+    )
+    if row:
+        st.sidebar.html(f'<p class="gra-side-links">{row}</p>')
 
 
 def footer():

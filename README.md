@@ -17,6 +17,11 @@ and in this demo nothing is ever sent at all.**
 > [hotel-ai-discovery](https://github.com/vamsialladev/hotel-ai-discovery).
 
 <!-- DEMO-VIDEO -->
+<!-- AI-NARRATED-DEMO:START -->
+<a href="https://vamsialla.com/projects/guest-request-agent.html#demo"><img src="docs/video/demo-ai-voice.jpg" alt="Demo video, AI-narrated: the agent reads a guest email, looks up the booking, drafts a cited reply that staff edit and approve, and resists an injection email" width="720"></a>
+
+**Demo video (1:12, AI-narrated):** [watch it with sound on vamsialla.com](https://vamsialla.com/projects/guest-request-agent.html#demo) (GitHub can't play MP4 files from a repo) · [download the MP4](docs/video/demo-ai-voice.mp4) · captions burned in ([text](docs/video/demo-ai-voice.srt)). The narrator is an AI voice (Kokoro); my own-voice version will replace it.
+<!-- AI-NARRATED-DEMO:END -->
 
 <p align="center"><img src="docs/images/demo.gif" alt="On the live app, the agent works through Elena's three-request email: booking found, three hotel policies searched and cited, two staff tasks proposed, checks passed, then the cited draft" width="760"></p>
 
@@ -42,7 +47,7 @@ and in this demo nothing is ever sent at all.**
 |---|---|
 | **Recruiter or hiring manager** | [At a glance](#at-a-glance) → [Results](#results) → [Skills demonstrated](#skills-demonstrated) → [Case study](https://vamsialla.com/projects/guest-request-agent.html) |
 | **Hotel manager or operations lead** | [The problem](#the-problem) → [What it does](#what-it-does) → [Business case](docs/BUSINESS_CASE.md) |
-| **Engineer** | [Architecture](#architecture) → [Results](#results) → [Run it locally](#run-it-locally) → [Decision log](docs/DECISIONS.md) |
+| **Engineer** | [Architecture](#architecture) → [Results](#results) → [Run it locally](#run-locally) → [Decision log](docs/DECISIONS.md) |
 
 ---
 
@@ -55,6 +60,8 @@ That's three requests, a booking to open, three policies to look up (pets, the l
 weekend rule, airport transfers) and a task for the concierge. In the same inbox: an angry guest demanding a full
 refund, a parent whose child was hurt at the pool, and an email that tries to talk the assistant into approving a
 refund. The first needs a careful reply; the next two need a manager now; the last needs to be ignored.
+
+I built this because a reply to one of these emails takes six to eight minutes with the lookups, longer if a manager has to approve something, and the general manager's line was "one confident wrong answer about money" is what would make them switch AI off ([discovery](https://github.com/vamsialladev/hotel-ai-discovery/blob/main/docs/DISCOVERY.md)).
 
 ## What it does
 
@@ -85,31 +92,13 @@ refund. The first needs a careful reply; the next two need a manager now; the la
 <img src="docs/images/admin-details.png" alt="Admin Request details dialog, Agent steps tab: each step with its tool and summary" width="640">
 </details>
 
-## Business value
-
-| Projected net value per year | 2 properties | 100 properties |
-|---|---|---|
-| Pessimistic | $10,376 | $530,548 |
-| **Base** (30 emails/day, 4 minutes saved each, 0.5 unapproved comps avoided per week) | **$37,052** | **$1,864,336** |
-| Optimistic | $82,387 | $4,131,125 |
-
-**Who benefits:** reservations and front-desk staff (a checked draft instead of writing from scratch), managers (money and guest-impact requests always reach them), guests (a same-day, correct reply). **How a pilot would measure it:** minutes per email by timing staff before and after, edits per approved draft, unapproved comps in the refund log against the 3 months before.
-
-A projection, not a measured saving. Only the AI cost ($1.30 per 1,000 emails) is measured. The result moves almost
-one-for-one with minutes saved per email, so that's what a pilot measures first ([pilot plan and KPIs](docs/BUSINESS_CASE.md)).
-
-<details>
-<summary>Calculator output</summary>
-
-<img src="docs/images/business-case.png" alt="Terminal output of python scripts/business_case.py --scenarios for 2 properties" width="640">
-</details>
-
 ## Architecture
 
 ```mermaid
 flowchart LR
-    E[Guest email<br/>untrusted data] --> T[Triage rules<br/>escalation · injection<br/>no API call]
-    T --> A[Agent loop<br/>Claude Haiku 5.5<br/>max 6 turns]
+    E[Guest email<br/>untrusted data] --> T[Triage rules<br/>escalation · injection · quarantine<br/>language · no API call]
+    T --> BL[Booking lookup by sender<br/>before the model, pins the hotel]
+    BL --> A[Agent loop<br/>Claude Haiku 5.5<br/>max 6 turns]
     A <--> TL[Tools]
     TL --> B[(Bookings<br/>SQLite, synthetic)]
     TL --> P[Policy search<br/>Project 1, pinned copy]
@@ -119,6 +108,7 @@ flowchart LR
     G --> S[Staff review<br/>approve · edit · reject]
     F --> S
     S -->|approve| O[Simulated outbox<br/>task board · manager queue]
+    S --> LOG[Request log<br/>personal data redacted first]
 ```
 
 ### How an email is handled
@@ -132,7 +122,8 @@ sequenceDiagram
     participant Tools
     Staff->>App: pick or write an email
     App->>Agent: email (as data), inbox property
-    Agent->>Agent: triage rules: escalation, injection
+    Agent->>Agent: triage rules: escalation, injection, planted instructions removed, language
+    Agent->>Tools: find the sender's booking (before the model; pins the hotel)
     loop at most 6 model turns
         Agent->>API: instructions + email + history
         API-->>Agent: tool calls (parallel)
@@ -265,6 +256,25 @@ Also in v1.1.0: a persistent request and decision log (Neon Postgres, SQLite or 
 - **The rules missed both held-out escalations; the model caught them.** A burn at a walk-in clinic and a guard who grabbed a guest's arm contain none of the rule words. Rules OR model is the design that held.
 - **A retrieval setting travels with its tests:** cutting Project 1's search from 5 passages to 3 lost "Is there a resort fee?".
 
+## Business value
+
+| Projected net value per year | 2 properties | 100 properties |
+|---|---|---|
+| Pessimistic | $10,376 | $530,548 |
+| **Base** (30 emails/day, 4 minutes saved each, 0.5 unapproved comps avoided per week) | **$37,052** | **$1,864,336** |
+| Optimistic | $82,387 | $4,131,125 |
+
+**Who benefits:** reservations and front-desk staff (a checked draft instead of writing from scratch), managers (money and guest-impact requests always reach them), guests (a same-day, correct reply). **How a pilot would measure it:** minutes per email by timing staff before and after, edits per approved draft, unapproved comps in the refund log against the 3 months before.
+
+A projection, not a measured saving. Only the AI cost ($1.30 per 1,000 emails) is measured. The result moves almost
+one-for-one with minutes saved per email, so that's what a pilot measures first ([pilot plan and KPIs](docs/BUSINESS_CASE.md)).
+
+<details>
+<summary>Calculator output</summary>
+
+<img src="docs/images/business-case.png" alt="Terminal output of python scripts/business_case.py --scenarios for 2 properties" width="640">
+</details>
+
 ## Design at scale
 
 What exists today is marked **Built**; anything else is **Roadmap**.
@@ -276,6 +286,46 @@ What exists today is marked **Built**; anything else is **Roadmap**.
 | **10K → 1M users** | **What breaks first:** one agent run takes about 4–8 s and several model turns, so a busy inbox queues up behind a single app process; the synthetic bookings live in a file. **Built:** results for sample emails are reused, per-session caps, the persistent Postgres log, budgets in CI. **Roadmap:** read bookings from the client's system through a read-only API; drafting as a background job from a queue (an inbox webhook adds the email, staff see drafts as they finish); several workers; per-property daily budgets; prompt caching for the system prompt and tool definitions. |
 | **Monitoring, alerting, hallucination and off-brand detection** | **Built:** every date, price, time and room number in a draft must come from a tool result (fact grounding); no-promise and escalation checks run on every draft; the Operations page shows errors, p50/p95, cost per day, escalations, fallbacks and budget status; a daily health check opens a GitHub issue when the app is down ([hotel-ai-handoff](https://github.com/vamsialladev/hotel-ai-handoff)); eval gates with p95 and cost budgets run in CI. **Roadmap:** off-brand tone detection with an LLM judge once it agrees with human labels (the stage 3 judge doesn't yet). |
 | **Failure modes and rollback** | **Built:** 30 s timeout + 1 retry, then a deterministic fallback reply and a staff task; `KILL_SWITCH` stops all model calls and sends every email the safe holding reply; staff approval is the only path out, so a bad draft never reaches a guest. Rollback: revert the commit on `main` (Streamlit Cloud redeploys) or run the previous release tag. |
+
+## Run locally
+
+**Windows (PowerShell)**
+```powershell
+cd C:\projects\project1\guest-request-agent
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+copy .env.example .env
+notepad .env          # add ANTHROPIC_API_KEY (and ADMIN_PASSWORD for the Admin page)
+.\run_app.ps1         # http://localhost:8501
+```
+
+**macOS / Linux**
+```bash
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env   # add ANTHROPIC_API_KEY
+streamlit run app.py
+```
+
+**Docker**
+```bash
+docker build -t guest-request-agent .
+docker run -p 8501:8501 --env-file .env guest-request-agent
+```
+
+The synthetic bookings and the policy index are built automatically on first start.
+
+## Limitations and roadmap
+
+- **Fixed in v1.1.0:** the wrong-hotel email (E12) is answered for the guest's own hotel (booking looked up first).
+- **Known gap:** replies don't always state a loyalty tier's late check-out (H03 key facts 0/3 in v1.1.0).
+- The escalation rules alone missed both held-out escalations; the model caught them. A missed escalation by both is
+  possible; Project 3 adds more held-out cases written by other people.
+- Planted instructions are removed when they are addressed to an automated reader; an instruction written as if from
+  the guest ("please waive my fee") is a normal request and goes to a manager, never a promise.
+- Tone and helpfulness aren't scored; an LLM judge calibrated on human labels is Project 3.
+- Name redaction is pattern-based and can miss a bare name with no cue; the Staff role is a shared password.
+- The eval, visitor and held-out emails were all written by me.
 
 ## Skills demonstrated
 
@@ -314,34 +364,6 @@ guest-request-agent/
 ├── tests/                  # 276 tests (+8 Postgres in CI), scripted fake model, every page rendered
 └── docs/                   # architecture, decisions, business case, demo script, checklists
 ```
-
-## Run it locally
-
-**Windows (PowerShell)**
-```powershell
-cd C:\projects\project1\guest-request-agent
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-copy .env.example .env
-notepad .env          # add ANTHROPIC_API_KEY (and ADMIN_PASSWORD for the Admin page)
-.\run_app.ps1         # http://localhost:8501
-```
-
-**macOS / Linux**
-```bash
-python3.12 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env   # add ANTHROPIC_API_KEY
-streamlit run app.py
-```
-
-**Docker**
-```bash
-docker build -t guest-request-agent .
-docker run -p 8501:8501 --env-file .env guest-request-agent
-```
-
-The synthetic bookings and the policy index are built automatically on first start.
 
 ## Configuration
 
@@ -422,18 +444,6 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
 propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
 kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
-
-## Limitations and roadmap
-
-- **Fixed in v1.1.0:** the wrong-hotel email (E12) is answered for the guest's own hotel (booking looked up first).
-- **Known gap:** replies don't always state a loyalty tier's late check-out (H03 key facts 0/3 in v1.1.0).
-- The escalation rules alone missed both held-out escalations; the model caught them. A missed escalation by both is
-  possible; Project 3 adds more held-out cases written by other people.
-- Planted instructions are removed when they are addressed to an automated reader; an instruction written as if from
-  the guest ("please waive my fee") is a normal request and goes to a manager, never a promise.
-- Tone and helpfulness aren't scored; an LLM judge calibrated on human labels is Project 3.
-- Name redaction is pattern-based and can miss a bare name with no cue; the Staff role is a shared password.
-- The eval, visitor and held-out emails were all written by me.
 
 ## Documentation
 
