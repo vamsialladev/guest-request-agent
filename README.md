@@ -249,6 +249,24 @@ New held-out emails were committed to the eval harness **before** each fix (b08�
 
 Also in v1.1.0: a persistent request and decision log (Neon Postgres, SQLite or files) with **personal data redacted before storage** and 30-day retention, a Staff role next to Demo mode, a kill switch, an owner **Operations** page with **budgets** (p95 ≤ 12.0 s, ≤ $2.00 per 1,000, also gated in CI), and `docker compose up` with its own Postgres. Handoff package: [hotel-ai-handoff](https://github.com/vamsialladev/hotel-ai-handoff).
 
+### Two orchestrations, same agent (1.3.0)
+
+The agent loop also runs as a LangGraph state graph (`ORCHESTRATOR=langgraph`), on the same prompts, tools, guards
+and spans. Live, 40 emails × 3 runs each, 2026-10-26 (`eval/reports/main-2026-10-26-orchestrator-*.md`):
+
+| | Manual loop (default) | LangGraph |
+|---|---|---|
+| Hard gates | 100% | 100% |
+| Task routing | 98% | 96% (95–98%) |
+| Citation accuracy (strict) | 96% (94–100%) | 100% |
+| p50 / p95 | 4.3 s / 8.5 s | 4.4 s / 8.9 s |
+| Cost per 1,000 emails | $1.22 | $1.23 |
+| Orchestration code | 14 lines | 42 lines + `langgraph` |
+
+The differences are inside run-to-run ranges, so the shorter manual loop stays the default ([decision 27](docs/DECISIONS.md)).
+The agent is also an **A2A server** (`docker compose up a2a`, [decision 28](docs/DECISIONS.md)) so the stage 6
+concierge can hand it guest emails.
+
 ### What the eval taught me
 - **Most "failures" were the grader's.** Eight detector, metric or label bugs failed safe drafts or correct answers: "I'm not able to offer a free upgrade myself" (negated), "your request for a complimentary upgrade" (naming the request), "so we can **compar**e" (a regex stem), "whether we match", "I can't confirm that we can match the price", a numbered list read as a date, and a label that punished asking a self-declared Platinum guest for their member number. Each now has a regression test with the exact sentence.
 - **The model's own label was wrong:** a reply written in Spanish came back labelled `en`. The language metric now reads the text.
@@ -390,6 +408,8 @@ guest-request-agent/
 | `RETENTION_DAYS` / `STAFF_IDLE_MINUTES` | `30` / `30` | Log retention; staff idle sign-out |
 | `BUDGET_P95_S` / `BUDGET_COST_PER_1000` | `12.0` / `2.00` | Budgets on the Operations page (gated in CI by the harness) |
 | `KILL_SWITCH` | `false` | `true`: no model calls; every email gets the safe holding reply and a staff task |
+| `ORCHESTRATOR` | `manual` | `langgraph` runs the same agent as a LangGraph graph (needs `requirements-agents.txt`) |
+| `A2A_TOKEN` / `A2A_PORT` / `A2A_PUBLIC_URL` | empty / `9100` / `http://127.0.0.1:9100` | A2A server: bearer token (required to start), port, URL in the agent card |
 
 ## Commands reference
 
@@ -403,6 +423,7 @@ guest-request-agent/
 | `make eval-final` | 3 runs of the 40 emails (about $0.16) |
 | `make eval-visitor` / `make eval-heldout` | Visitor and held-out sets |
 | `make replay` | Re-score the recorded final run with the gates (free; what CI does) |
+| `python -m src.a2a_server` | Start the A2A server (needs `A2A_TOKEN` and `requirements-agents.txt`) |
 | `make business` | Projected value, three scenarios |
 | `make secrets` | Build `.streamlit/secrets.toml` from `.env` (prints key names only) |
 | `python scripts/sync_policy.py --check` | Verify the Project 1 copy |

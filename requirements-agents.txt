@@ -1,0 +1,6 @@
+# Optional: the second orchestration (ORCHESTRATOR=langgraph) and the A2A server (python -m src.a2a_server).
+# Not needed by the Streamlit app, so Streamlit Cloud doesn't install them. CI and Docker do.
+-r requirements.txt
+langgraph~=1.2.17
+a2a-sdk[http-server]~=1.2.3
+uvicorn~=0.54

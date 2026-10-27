@@ -38,6 +38,9 @@ MAX_AGENT_STEPS = int(os.getenv("MAX_AGENT_STEPS", "6"))  # model turns per emai
 
 # Public demo protections
 MAX_EMAIL_CHARS = int(os.getenv("MAX_EMAIL_CHARS", "2000"))
+# Which orchestration runs the tool loop: "manual" (the default, a plain loop) or "langgraph" (the same steps as a
+# LangGraph state graph, src/agent_graph.py). Both share every prompt, tool and guard (decision 27).
+ORCHESTRATOR = os.getenv("ORCHESTRATOR", "manual").strip().lower()
 MAX_EMAILS_PER_SESSION = int(os.getenv("MAX_EMAILS_PER_SESSION", "10"))
 MAX_EMAILS_PER_DAY = int(os.getenv("MAX_EMAILS_PER_DAY", "150"))
 LOG_MAX_ENTRIES = int(os.getenv("LOG_MAX_ENTRIES", "5000"))

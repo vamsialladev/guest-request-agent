@@ -28,13 +28,13 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: "Install (light: the same install Streamlit Cloud uses, plus test tools)"
-        run: pip install -r requirements.txt "pytest~=9.1" "pytest-cov~=7.1" "ruff==0.16.10" "pip-audit~=2.10"
+        run: pip install -r requirements-agents.txt "pytest~=9.1" "pytest-cov~=7.1" "ruff==0.16.10" "pip-audit~=2.10"
       - name: Lint and format check
         run: |
           ruff check .
           ruff format --check .
       - name: Dependency audit (fails on any known vulnerability)
-        run: pip-audit -r requirements.txt --progress-spinner off
+        run: pip-audit -r requirements-agents.txt --progress-spinner off  # includes requirements.txt
       - name: Policy copy matches the pinned Project 1 commit
         run: python scripts/sync_policy.py --check
       - name: Unit tests with coverage (gate 90%)
@@ -43,6 +43,10 @@ jobs:
         run: python -m eval.run_eval --replay eval/recorded/main-final.jsonl --gate --no-report
       - name: "Held-out set, recorded run: same gates (no API)"
         run: python -m eval.run_eval --replay eval/recorded/heldout-final.jsonl --gate --no-report
+      - name: "Both orchestrations' recorded runs (decision 27): same gates (no API)"
+        run: |
+          python -m eval.run_eval --replay eval/recorded/main-orchestrator-manual-2026-10-26.jsonl --gate --no-report
+          python -m eval.run_eval --replay eval/recorded/main-orchestrator-langgraph-2026-10-26.jsonl --gate --no-report
       - name: "Red-team gate: shared corpus + this app's cases through the real defences (free; fails on any new miss)"
         run: python scripts/run_redteam.py
       - name: SBOM (CycloneDX) of the installed runtime

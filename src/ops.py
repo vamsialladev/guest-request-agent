@@ -22,7 +22,7 @@ from hotelplatform import guardrails, jsonlog, oplog, pii, tracing, version
 from src.config import ALERT_DAILY_COST_USD, APP_NAME, BUDGET_P95_S, LLM_MODEL, MAX_EMAIL_CHARS, RETENTION_DAYS
 
 ROOT = Path(__file__).resolve().parent.parent
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 MONTHLY_COST_CAP_USD = float(os.getenv("MONTHLY_COST_CAP_USD", "10.00"))
 
 INPUT_POLICY = guardrails.InputPolicy(
