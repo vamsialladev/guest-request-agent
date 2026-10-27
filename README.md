@@ -306,6 +306,24 @@ What exists today is marked **Built**; anything else is **Roadmap**.
 | **Observability** | **Built (1.2.0):** every email is one trace (OpenTelemetry-shaped IDs) with a span per step: input guardrails → triage → the deterministic booking lookup → each model turn (tokens, stop reason) → each tool call (arguments, ok). Rows go to the shared `ops_request_log` / `ops_trace_span` tables (one Neon database for all the hotel apps), PII removed before the write, batched off the request path, 30-day retention. A failed run shows "Reference: 4f1c9a2e"; Admin → **Traces** finds it and draws the waterfall. Staff approve/reject decisions are recorded as 👍/👎 on the trace. Structured JSON logs (app start + version, config set/missing, slow runs over the 12 s p95 budget, caps). A daily Action in streamlit-keep-awake opens an issue if the error rate passes 5%. **Roadmap:** an OpenTelemetry exporter to a real collector. |
 | **Failure modes and rollback** | **Built:** 30 s timeout + 1 retry, then a deterministic fallback reply and a staff task; `KILL_SWITCH` stops all model calls and sends every email the safe holding reply; staff approval is the only path out, so a bad draft never reaches a guest. Rollback: revert the commit on `main` (Streamlit Cloud redeploys) or run the previous release tag. |
 
+## Security & guardrails
+
+**Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
+
+**Guardrails (1.2.0, shared with every hotel app through [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)):**
+a guest email is never dropped (staff must see it), so attack patterns are flagged on the trace and planted
+instructions are removed before the model reads the email. That's this app's markers plus the shared ones, which
+caught an instruction hidden in an HTML comment and a jailbreak sentence that this app's own list missed. Card and ID
+numbers are replaced before the model. On the draft: promises removed (this app's guard), leaked contact details
+replaced, prompt leaks and off-brand text turned into a holding reply for a manager. **Red team**
+([docs/RED_TEAM.md](docs/RED_TEAM.md), in CI): the shared corpus passes 48/48 through this app; this app's 19
+held-out cases passed 14/19 on the first run and 18/19 after the fix (the one left is a paraphrase with no trigger
+words). Tool layer: another guest's booking is never returned, and refunds are only proposed.
+
+Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
+propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
+kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
+
 ## Run locally
 
 **Windows (PowerShell)**
@@ -458,24 +476,6 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 <img src="docs/images/tests.png" alt="Terminal output (v1.0.0): 237 passed, total coverage 98%, required coverage of 90% reached" width="640">
 </details>
-
-## Security and privacy
-
-**Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
-
-**Guardrails (1.2.0, shared with every hotel app through [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)):**
-a guest email is never dropped (staff must see it), so attack patterns are flagged on the trace and planted
-instructions are removed before the model reads the email. That's this app's markers plus the shared ones, which
-caught an instruction hidden in an HTML comment and a jailbreak sentence that this app's own list missed. Card and ID
-numbers are replaced before the model. On the draft: promises removed (this app's guard), leaked contact details
-replaced, prompt leaks and off-brand text turned into a holding reply for a manager. **Red team**
-([docs/RED_TEAM.md](docs/RED_TEAM.md), in CI): the shared corpus passes 48/48 through this app; this app's 19
-held-out cases passed 14/19 on the first run and 18/19 after the fix (the one left is a paraphrase with no trigger
-words). Tool layer: another guest's booking is never returned, and refunds are only proposed.
-
-Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
-propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
-kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
