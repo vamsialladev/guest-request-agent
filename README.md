@@ -37,7 +37,7 @@ and in this demo nothing is ever sent at all.**
 |---|---|
 | **Problem** | Guest emails mix several requests, need the booking, availability and the right hotel's policy, and sometimes need a manager today. Under pressure, staff promise refunds or upgrades only a manager can approve. |
 | **Solution** | An agent with six typed tools drafts a cited reply, lists every request, proposes tasks for the right team and routes refunds, comps, upgrades and changes to a manager. Staff approve, edit or reject. |
-| **Quality (measured)** | **v1.0.0:** 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**. 237 tests, 98% coverage. **v1.1.0 (stage 4, production):** correct tool use 100%, citations 100%, the wrong-hotel case fixed (0/6 → 6/6), p95 8.3 s, 276 tests, 97% coverage. |
+| **Quality (measured)** | **v1.0.0:** 40 labelled emails × 3 runs: **escalation recall 100%**, **injection resistance 100%**, **no forbidden promises 100%** (CI gates), request coverage 100%, fact grounding 100%, task routing 98%, 0 false escalations. Held-out set (8 emails written last): 100% on every metric. First-email success for visitor-style emails: 100% (10). Full draft p50 **4.6 s**, p95 **8.4 s**. 237 tests, 98% coverage. **v1.1.0 (stage 4, production):** correct tool use 100%, citations 100%, the wrong-hotel case fixed (0/6 → 6/6), p95 8.3 s, 314 tests, 97% coverage. |
 | **Cost (measured)** | **$1.24 per 1,000 emails** in v1.1.0 ($1.30 in v1.0.0), Claude Haiku 5.5, 3 runs |
 | **Projected value** | ~$37K/yr net for 2 properties (range $10K–$82K); ~$1.9M/yr at 100 properties ([assumptions](docs/BUSINESS_CASE.md)) |
 
@@ -306,6 +306,24 @@ What exists today is marked **Built**; anything else is **Roadmap**.
 | **Observability** | **Built (1.2.0):** every email is one trace (OpenTelemetry-shaped IDs) with a span per step: input guardrails → triage → the deterministic booking lookup → each model turn (tokens, stop reason) → each tool call (arguments, ok). Rows go to the shared `ops_request_log` / `ops_trace_span` tables (one Neon database for all the hotel apps), PII removed before the write, batched off the request path, 30-day retention. A failed run shows "Reference: 4f1c9a2e"; Admin → **Traces** finds it and draws the waterfall. Staff approve/reject decisions are recorded as 👍/👎 on the trace. Structured JSON logs (app start + version, config set/missing, slow runs over the 12 s p95 budget, caps). A daily Action in streamlit-keep-awake opens an issue if the error rate passes 5%. **Roadmap:** an OpenTelemetry exporter to a real collector. |
 | **Failure modes and rollback** | **Built:** 30 s timeout + 1 retry, then a deterministic fallback reply and a staff task; `KILL_SWITCH` stops all model calls and sends every email the safe holding reply; staff approval is the only path out, so a bad draft never reaches a guest. Rollback: revert the commit on `main` (Streamlit Cloud redeploys) or run the previous release tag. |
 
+## Security & guardrails
+
+**Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
+
+**Guardrails (1.2.0, shared with every hotel app through [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)):**
+a guest email is never dropped (staff must see it), so attack patterns are flagged on the trace and planted
+instructions are removed before the model reads the email. That's this app's markers plus the shared ones, which
+caught an instruction hidden in an HTML comment and a jailbreak sentence that this app's own list missed. Card and ID
+numbers are replaced before the model. On the draft: promises removed (this app's guard), leaked contact details
+replaced, prompt leaks and off-brand text turned into a holding reply for a manager. **Red team**
+([docs/RED_TEAM.md](docs/RED_TEAM.md), in CI): the shared corpus passes 48/48 through this app; this app's 19
+held-out cases passed 14/19 on the first run and 18/19 after the fix (the one left is a paraphrase with no trigger
+words). Tool layer: another guest's booking is never returned, and refunds are only proposed.
+
+Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
+propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
+kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
+
 ## Run locally
 
 **Windows (PowerShell)**
@@ -380,7 +398,7 @@ guest-request-agent/
 ├── data/                   # inbox.jsonl (30 emails), policy/raw (Project 1's documents)
 ├── eval/                   # cases (40), visitor (10), heldout (8), metrics, runner, recorded runs, reports
 ├── scripts/                # make_data, sync_policy, business_case, make_secrets, screenshots, video
-├── tests/                  # 276 tests (+8 Postgres in CI), scripted fake model, every page rendered
+├── tests/                  # 314 tests in CI (8 of them against Postgres), scripted fake model, every page rendered
 └── docs/                   # architecture, decisions, business case, demo script, checklists
 ```
 
@@ -450,7 +468,7 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 ## Testing and quality
 
-- 276 tests (plus 8 that run against Postgres in CI), 97% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
+- 314 tests in CI (8 of them against Postgres), 97% coverage (product code only), every page rendered with Streamlit's `AppTest` and a scripted fake model.
 - CI on every push: ruff, pytest with a 90% gate (and a Postgres service), pip-audit, the Project 1 copy check, the eval gates on the recorded final and held-out runs (hoteleval v1.0.0), and the v1.1.0 release run gated with budgets (hoteleval v1.2.0).
 
 <details>
@@ -458,24 +476,6 @@ updates consistent. **Set a monthly spending limit in the Anthropic Console firs
 
 <img src="docs/images/tests.png" alt="Terminal output (v1.0.0): 237 passed, total coverage 98%, required coverage of 90% reached" width="640">
 </details>
-
-## Security and privacy
-
-**Live since 2026-10-16:** both live apps log to Neon Postgres. Checked that day: a visitor request with a planted name, email and phone was stored with all three replaced by `[name]`, `[email]`, `[phone]`, and the Operations page reads it.
-
-**Guardrails (1.2.0, shared with every hotel app through [hotel-ai-platform](https://github.com/vamsialladev/hotel-ai-platform)):**
-a guest email is never dropped (staff must see it), so attack patterns are flagged on the trace and planted
-instructions are removed before the model reads the email. That's this app's markers plus the shared ones, which
-caught an instruction hidden in an HTML comment and a jailbreak sentence that this app's own list missed. Card and ID
-numbers are replaced before the model. On the draft: promises removed (this app's guard), leaked contact details
-replaced, prompt leaks and off-brand text turned into a holding reply for a manager. **Red team**
-([docs/RED_TEAM.md](docs/RED_TEAM.md), in CI): the shared corpus passes 48/48 through this app; this app's 19
-held-out cases passed 14/19 on the first run and 18/19 after the fix (the one left is a paraphrase with no trigger
-words). Tool layer: another guest's booking is never returned, and refunds are only proposed.
-
-Untrusted email text is data, and planted instructions are removed before the model reads it; tools can only read or
-propose; secrets are masked and personal data redacted before any log record is stored; with `DATABASE_URL` logs are
-kept 30 days in Postgres, otherwise until restart; staff sign-in is a shared password (a client would use SSO). Full threat model with risks and mitigations: [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
