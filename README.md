@@ -18,9 +18,9 @@ and in this demo nothing is ever sent at all.**
 
 <!-- DEMO-VIDEO -->
 <!-- AI-NARRATED-DEMO:START -->
-<a href="docs/video/demo-ai-voice.mp4"><img src="docs/video/demo-ai-voice.jpg" alt="Demo video, AI-narrated: the agent reads a guest email, looks up the booking, drafts a cited reply that staff edit and approve, and resists an injection email" width="720"></a>
+<a href="https://vamsialla.com/projects/guest-request-agent.html#demo"><img src="docs/video/demo-ai-voice.jpg" alt="Demo video, AI-narrated: the agent reads a guest email, looks up the booking, drafts a cited reply that staff edit and approve, and resists an injection email" width="720"></a>
 
-**Demo video (1:12, AI-narrated):** [watch the MP4](docs/video/demo-ai-voice.mp4) · captions burned in ([text](docs/video/demo-ai-voice.srt)). The narrator is an AI voice (Kokoro); my own-voice version will replace it.
+**Demo video (1:12, AI-narrated):** [watch it with sound on vamsialla.com](https://vamsialla.com/projects/guest-request-agent.html#demo) (GitHub can't play MP4 files from a repo) · [download the MP4](docs/video/demo-ai-voice.mp4) · captions burned in ([text](docs/video/demo-ai-voice.srt)). The narrator is an AI voice (Kokoro); my own-voice version will replace it.
 <!-- AI-NARRATED-DEMO:END -->
 
 <p align="center"><img src="docs/images/demo.gif" alt="On the live app, the agent works through Elena's three-request email: booking found, three hotel policies searched and cited, two staff tasks proposed, checks passed, then the cited draft" width="760"></p>
