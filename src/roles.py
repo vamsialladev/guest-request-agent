@@ -22,7 +22,7 @@ def role(gate: GateState | None, now: float, idle_seconds: float) -> str:
 
 
 def staff_attempt(gate: GateState, given: str, secret: str | None, now: float) -> tuple[bool, str | None]:
-    ok, message = attempt(gate, given, secret, now)
+    ok, message = attempt(gate, given, secret, now, scope="staff")  # its own lockout counter
     if message == "The admin page is not configured.":
         message = "Staff sign-in is not configured."
     return ok, message

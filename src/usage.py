@@ -152,4 +152,7 @@ def log_decision(record: dict, path: Path | None = None) -> dict:
     record = redact({"time": now_iso(), **record})
     append_jsonl(path or decisions_file(), record)
     logger.info("decision %s", json.dumps({k: record.get(k) for k in ("request_id", "decision")}))
+    from src import ops  # staff decisions are this app's feedback in the shared ops log
+
+    ops.decision_feedback(record)
     return record

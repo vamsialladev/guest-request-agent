@@ -42,6 +42,15 @@ if admin_password():
             visibility="visible" if unlocked else "hidden",
         )
     )
+    pages.append(  # Final stage: the shared ops traces (hotel-ai-platform), behind the same sign-in as Admin
+        st.Page(
+            "views/traces.py",
+            title="Traces",
+            icon=":material/account_tree:",
+            url_path="traces",
+            visibility="visible" if unlocked else "hidden",
+        )
+    )
     pages.append(  # Project 4: owner-only, behind the same sign-in as Admin
         st.Page(
             "views/operations.py",
@@ -55,6 +64,7 @@ if admin_password():
 page = st.navigation(pages)
 ui.app_started()
 ui.startup_checks()
+ui.structured_startup_log()  # one JSON line each: app start + version, config set/missing, dependencies
 with ui.error_boundary("Staff panel"):
     ui.staff_panel(ui.recent_drafts)
 with ui.error_boundary(page.title):  # no page ever shows Streamlit's crash screen or a traceback

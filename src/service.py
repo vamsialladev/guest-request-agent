@@ -7,9 +7,10 @@ daily cap → agent → one request-log record. Every outcome is logged, includi
 """
 
 import uuid
+from dataclasses import replace
 
-from src import triage
-from src.agent import Email, run_agent
+from src import ops, triage
+from src.agent import Email, holding_template, run_agent
 from src.config import (
     LLM_MODEL,
     MAX_EMAIL_CHARS,
@@ -29,6 +30,7 @@ SESSION_CAP_MESSAGE = (
 DAILY_CAP_MESSAGE = "The demo has reached today's limit across all visitors. Please come back tomorrow."
 ERROR_MESSAGE = "The assistant is temporarily unavailable. Please try again in a minute."
 RESULT_CHARS = 1500
+NL = "\n"  # subject and body are checked as one text, then split back at the first newline
 
 
 def new_id() -> str:
@@ -132,7 +134,34 @@ def quick_result(outcome: str, message: str) -> AgentResult:
     return AgentResult(outcome=outcome, message=message)
 
 
-def process(
+def process(email: Email, prop: str, *, source: str, session_id: str | None = None, **kwargs):
+    """Process one email inside one trace (hotel-ai-platform): guardrails, the deterministic booking lookup, every
+    model turn and tool call, and the output check are its spans. Returns (result, record) as before."""
+    with ops.start(session_id) as trace:
+        verdict = ops.check_email(email.subject + NL + email.body)  # attacks flagged; cards/IDs replaced
+        subject, _, body = verdict.text.partition(NL)
+        for_model = replace(email, subject=subject, body=body)
+        result, record = _process(email, prop, source=source, session_id=session_id, for_model=for_model,
+                                  trace=trace, **kwargs)  # fmt: skip
+        ops.finish(trace, record)  # the shared ops row + spans; never blocks or raises
+    return result, record
+
+
+def check_draft(result: AgentResult, for_model: Email, trace) -> AgentResult:
+    """The shared output check on the draft, after this app's own guard (promises, citations, grounding)."""
+    if not result.reply:
+        return result
+    checked = ops.check_draft(result.reply, result.sources, for_model.subject + NL + for_model.body)
+    if not checked.allowed:  # prompt leak or off-brand text: a holding reply and a manager, never the text
+        reasons = [*result.escalation_reasons, f"guardrail: {checked.reason}"]
+        return result.model_copy(update={"reply": holding_template(result.language, True), "escalate": True,
+                                         "escalation_reasons": reasons, "outcome": "escalated"})  # fmt: skip
+    if checked.text != result.reply:  # contact details the guest didn't give, replaced
+        return result.model_copy(update={"reply": checked.text})
+    return result
+
+
+def _process(
     email: Email,
     prop: str,
     *,
@@ -145,8 +174,11 @@ def process(
     client=None,
     log: bool = True,
     keyword_matches=None,
+    for_model: Email | None = None,
+    trace=None,
 ) -> tuple[AgentResult, dict]:
-    """Process one email. `session_count` is how many emails this session already sent to the agent."""
+    """Process one email. `session_count` is how many emails this session already sent to the agent. The agent
+    reads `for_model` (card and ID numbers replaced); the record keeps the email as received (redacted on write)."""
     request_id = new_id()
     error = error_message = None
     if source == "write":
@@ -169,6 +201,9 @@ def process(
                 first=first,
                 email_id=email_id,
             )
+            if trace is not None:
+                record["trace_id"] = trace.trace_id
+                record["safety_flags"] = ops.safety_flags(trace)
             return result, (log_request(record) if log else record)
     if session_count >= MAX_EMAILS_PER_SESSION:
         result, error = quick_result("cap", SESSION_CAP_MESSAGE), "session_cap"
@@ -176,7 +211,7 @@ def process(
         result, error = quick_result("cap", DAILY_CAP_MESSAGE), "daily_cap"
     else:
         try:
-            result = run_agent(email, prop, client=client)
+            result = run_agent(for_model or email, prop, client=client)
         except Exception as exc:  # run_agent has its own fallback; this is the last line of defence
             record_error("Agent", exc)
             result = quick_result("error", ERROR_MESSAGE)
@@ -184,6 +219,11 @@ def process(
         if result.fallback_reason and result.fallback_reason.startswith("api_"):
             error = result.fallback_reason[4:]
             error_message = f"API call failed ({error}); fallback draft used"
+        result = check_draft(result, for_model or email, trace)
+        if trace is not None and (error or result.outcome == "error"):
+            result.flags["reference"] = trace.reference  # shown to staff; Admin -> Traces finds the request
+            if result.outcome == "error":
+                result = result.model_copy(update={"message": f"{result.message} Reference: {trace.reference}"})
     record = build_record(
         result,
         email,
@@ -197,4 +237,7 @@ def process(
         error_message=error_message,
     )
     record["model"] = record["model"] or (LLM_MODEL if result.api_calls else None)
+    if trace is not None:
+        record["trace_id"] = trace.trace_id
+        record["safety_flags"] = ops.safety_flags(trace)
     return result, (log_request(record) if log else record)
